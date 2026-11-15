@@ -3,264 +3,535 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tasarım Stüdyosu</title>
+<title>Wolflano Tasarla</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:#f3f4f8;color:#222}
-header{background:#1f2440;color:#fff;padding:14px 24px;font-size:20px;font-weight:600}
-main{display:grid;grid-template-columns:280px 1fr 280px;gap:16px;padding:16px;max-width:1300px;margin:auto}
-@media(max-width:900px){main{grid-template-columns:1fr}}
-.panel{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px #0001}
-h3{margin:0 0 10px;font-size:15px}
-.products{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-button,select,input,textarea{font:inherit}
-button{border:1px solid #ccd;background:#fff;border-radius:8px;padding:8px;cursor:pointer}
-button:hover{background:#eef}
-button.active{background:#1f2440;color:#fff;border-color:#1f2440}
-button.primary{background:#e8465a;color:#fff;border:0;width:100%;padding:12px;font-weight:600}
-.colors{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
-.sw{width:28px;height:28px;border-radius:50%;border:2px solid #ccd;cursor:pointer;padding:0}
-.sw.active{outline:3px solid #e8465a}
-.stage{display:flex;flex-direction:column;align-items:center}
-canvas{background:#fff;border-radius:12px;max-width:100%;touch-action:none;cursor:move;box-shadow:0 2px 8px #0001}
-.row{display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
-.row label{font-size:13px;width:60px}
-.row input[type=range]{flex:1}
-textarea,select,input[type=text]{width:100%;padding:8px;border:1px solid #ccd;border-radius:8px;margin-bottom:8px}
-.emojis button{font-size:20px;padding:4px 8px}
-.hint{font-size:12px;color:#667;margin:6px 0}
-#props{display:none}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--p:#6a2cf5;--pl:#efe9ff;--o:#ff6a13;--bd:#e4e4ec;--tx:#1d1d2b;--mut:#6b6b80}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f5f9;color:var(--tx)}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.top{display:flex;align-items:center;gap:10px;background:#fff;padding:10px 18px;box-shadow:0 1px 6px #0001;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.logo{font-size:26px;font-weight:900;font-style:italic;letter-spacing:-.5px}
+.logo small{font-style:normal;font-weight:700;font-size:22px;color:var(--p);margin-left:10px}
+.sp{flex:1}
+.ib{width:42px;height:42px;border:0;border-radius:10px;background:#f0f0f5;font-size:20px}
+.ib:disabled{opacity:.4}
+.btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;font-size:15px}
+.btn.pr{background:var(--p);box-shadow:0 3px 10px #6a2cf555}
+.btn.or{background:var(--o);box-shadow:0 3px 10px #ff6a1355}
+.app{display:grid;grid-template-columns:250px minmax(0,1fr) 400px;gap:16px;padding:16px;max-width:1500px;margin:auto;align-items:start}
+.card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 6px #0001}
+.nav{display:flex;flex-direction:column;gap:8px}
+.nav button{display:flex;align-items:center;gap:12px;border:0;background:#f6f6fa;border-radius:12px;padding:10px 12px;font-size:16px;text-align:left}
+.nav button i{font-style:normal;width:36px;height:36px;display:grid;place-items:center;background:#fff;border-radius:10px;font-size:19px;box-shadow:0 1px 3px #0002}
+.nav button.on{background:var(--pl);color:var(--p);font-weight:600}
+.fly{margin-top:12px;display:none}
+.fly.on{display:block}
+.fly h4,.opts h3{margin:0 0 10px;font-size:17px}
+.sel{margin-top:12px;display:none}
+.sel h4{margin:0 0 8px}
+input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--bd);border-radius:9px;margin-bottom:8px;background:#fff}
+.r{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.r label{font-size:13px;min-width:56px;color:var(--mut)}
+.r input[type=range]{flex:1;accent-color:var(--p)}
+.sm{border:1px solid var(--bd);background:#fff;border-radius:9px;padding:8px 10px}
+.sm:hover{background:var(--pl)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.grid button{font-size:22px;padding:6px}
+.pre{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pre button{font-size:13px;padding:8px}
+.stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px}
+.vp{overflow:auto;aspect-ratio:1;border-radius:10px;max-height:82vh;max-width:82vh;margin:auto}
+canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
+.lbl{position:absolute;left:18px;bottom:16px;color:#fff;font-size:13px;line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
+.tog{position:absolute;right:16px;bottom:14px;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px #0003}
+.tog input{width:36px;height:20px;accent-color:var(--p)}
+.thumbs{display:flex;gap:10px;margin-top:12px;min-height:110px}
+.thumbs button{border:2px solid transparent;background:none;padding:0;border-radius:10px;font-size:13px;color:var(--mut);flex:0 0 auto;text-align:center}
+.thumbs button canvas{display:block;border-radius:8px;background:#8d8d8d}
+.thumbs button.on{border-color:var(--p);color:var(--p)}
+.thumbs button.dis{opacity:.45;cursor:not-allowed}
+.opts section{padding:12px 0;border-bottom:1px solid var(--bd)}
+.opts section:last-child{border:0}
+.opts section:first-child{padding-top:0}
+.prods{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.prods button{border:2px solid var(--bd);background:#fff;border-radius:10px;padding:3px 2px;font-size:11px}
+.prods button canvas{width:100%;height:auto;display:block;border-radius:6px;background:#e7e7ee}
+.prods button.on,.views button.on{border-color:var(--p);box-shadow:0 0 0 2px var(--p) inset}
+.cols{display:flex;gap:12px;flex-wrap:wrap}
+.cols button{width:42px;height:42px;border-radius:50%;border:2px solid #cfcfe0;padding:0}
+.cols button.on{outline:3px solid var(--p);outline-offset:2px}
+.sizes{display:flex;gap:6px;flex-wrap:wrap}
+.sizes button{border:1px solid var(--bd);background:#fff;border-radius:9px;padding:10px 11px;font-weight:600;font-size:14px}
+.sizes button.on{background:var(--p);color:#fff;border-color:var(--p)}
+.info{display:flex;gap:14px;align-items:center;background:var(--pl);border-radius:10px;padding:12px;margin-top:10px;font-size:15px}
+.info b{display:block;margin-bottom:3px}
+.info span{margin-right:14px}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.views button{border:2px solid var(--bd);background:#fff;border-radius:10px;padding:4px;font-size:13px}
+.views canvas{width:100%;height:auto;display:block;border-radius:6px;background:#8d8d8d}
+.zoom{display:flex;align-items:center;gap:10px}
+.zoom input{flex:1;accent-color:var(--p)}
+.zoom .ib{width:38px;height:38px;font-size:17px;background:#fff;border:1px solid var(--bd)}
+dialog{border:0;border-radius:16px;padding:18px;max-width:min(96vw,900px);width:100%}
+dialog::backdrop{background:#000a}
+.pv{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.pv figure{margin:0;flex:1 1 300px;text-align:center}
+.pv img{width:100%;border-radius:10px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1d2b;color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:50}
+.hint{font-size:12px;color:var(--mut)}
+@media(max-width:1050px){
+  .app{grid-template-columns:1fr;padding:10px}
+  .stage{order:1}.tools{order:2}.opts{order:3}
+  .nav{flex-direction:row;overflow-x:auto}
+  .nav button{flex:0 0 auto}
+  .logo{font-size:20px}.logo small{font-size:16px}
+  .btn{padding:9px 12px;font-size:13px}.ib{width:36px;height:36px}
+  .top{padding:8px 10px}
+}
 </style>
 </head>
 <body>
-<header>🎨 Tasarım Stüdyosu — Kendi Ürününü Tasarla</header>
-<main>
-<section class="panel">
-  <h3>1. Ürün</h3>
-  <div class="products" id="products"></div>
-  <div id="sizeBox"><h3>2. Baskı boyutu</h3><select id="sizeSel"></select></div>
-  <h3>3. Ürün rengi</h3>
-  <div class="colors" id="colors"></div>
-  <h3>4. Ekle</h3>
-  <input type="text" id="txt" placeholder="Yazı yazın...">
-  <button id="addText" style="width:100%;margin-bottom:8px">➕ Yazı ekle</button>
-  <button id="addImg" style="width:100%;margin-bottom:8px">🖼️ Görsel yükle</button>
-  <input type="file" id="file" accept="image/*" hidden>
-  <div class="row"><button data-shape="rect">▭</button><button data-shape="circle">●</button><button data-shape="star">★</button><button data-shape="heart">♥</button></div>
-  <div class="emojis" id="emojis"></div>
-</section>
+<header class="top">
+  <div class="logo">🐺 WOLFLANO<small>Tasarla</small></div>
+  <span class="sp"></span>
+  <button class="ib" id="undo" title="Geri al">↶</button>
+  <button class="ib" id="redo" title="İleri al">↷</button>
+  <button class="btn pr" id="preview">👁 Ön İzleme</button>
+  <button class="btn or" id="cart">🛒 Sepete Ekle</button>
+</header>
 
-<section class="stage">
-  <canvas id="c" width="600" height="600"></canvas>
-  <p class="hint" id="areaInfo"></p>
-  <p class="hint">Öğeyi sürükleyerek taşıyın. Kesikli çerçeve baskı alanıdır.</p>
-</section>
+<div class="app">
+  <aside class="tools">
+    <div class="card">
+      <div class="nav" id="nav">
+        <button data-t="text"><i>T</i>Metin Ekle</button>
+        <button data-t="image"><i>🖼</i>Görsel Ekle</button>
+        <button data-t="ready"><i>✨</i>Hazır Tasarımlar</button>
+        <button data-t="shapes"><i>◻</i>Şekiller</button>
+        <button data-t="qr"><i>▦</i>Qr Kod</button>
+        <button data-t="bg"><i>▨</i>Arka Plan</button>
+      </div>
+      <input type="file" id="file" accept="image/*" hidden>
 
-<section class="panel">
-  <h3>Seçili öğe</h3>
-  <p class="hint" id="none">Düzenlemek için bir öğe seçin.</p>
-  <div id="props">
-    <div id="textProps">
-      <textarea id="pText" rows="2"></textarea>
-      <select id="pFont">
-        <option>Arial</option><option>Georgia</option><option>Impact</option>
-        <option>Courier New</option><option>Comic Sans MS</option><option>Brush Script MT</option>
-      </select>
+      <div class="fly" id="f-text">
+        <h4>Metin Ekle</h4>
+        <textarea id="txt" rows="2" placeholder="Metninizi yazın..."></textarea>
+        <button class="btn pr" id="addText" style="width:100%">Ekle</button>
+      </div>
+      <div class="fly" id="f-ready">
+        <h4>Hazır Tasarımlar</h4>
+        <div class="pre" id="presets"></div>
+        <h4 style="margin-top:12px">Emojiler</h4>
+        <div class="grid" id="emojis"></div>
+      </div>
+      <div class="fly" id="f-shapes">
+        <h4>Şekiller</h4>
+        <div class="grid" id="shapes"></div>
+      </div>
+      <div class="fly" id="f-qr">
+        <h4>Qr Kod</h4>
+        <input type="text" id="qrText" placeholder="Bağlantı veya metin">
+        <div class="r"><label>Renk</label><input type="color" id="qrColor" value="#000000"></div>
+        <div class="r"><label><input type="checkbox" id="qrBg" checked> Beyaz zemin</label></div>
+        <button class="btn pr" id="addQr" style="width:100%">Qr Kod Ekle</button>
+      </div>
+      <div class="fly" id="f-bg">
+        <h4>Arka Plan</h4>
+        <p class="hint">Baskı alanının arka plan rengi.</p>
+        <div class="r"><input type="color" id="bgColor" value="#ffffff"><button class="sm" id="bgSet">Uygula</button><button class="sm" id="bgDel">Kaldır</button></div>
+      </div>
+
+      <div class="sel" id="sel">
+        <h4>Seçili öğe</h4>
+        <div id="selText">
+          <textarea id="pText" rows="2"></textarea>
+          <select id="pFont">
+            <option>Arial</option><option>Georgia</option><option>Impact</option>
+            <option>Courier New</option><option>Comic Sans MS</option><option>Brush Script MT</option>
+          </select>
+        </div>
+        <div class="r" id="selColor"><label>Renk</label><input type="color" id="pColor" value="#000000"></div>
+        <div class="r"><label id="sizeLbl">Boyut</label><input type="range" id="pScale" min="1" max="60" step="0.5"></div>
+        <div class="r"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180"></div>
+        <div class="r"><button class="sm" id="front">⬆ Öne</button><button class="sm" id="back">⬇ Arkaya</button><button class="sm" id="dup">⧉ Kopyala</button><button class="sm" id="del">🗑 Sil</button></div>
+      </div>
     </div>
-    <div class="row" id="colorRow"><label>Renk</label><input type="color" id="pColor" value="#000000"></div>
-    <div class="row"><label>Boyut</label><input type="range" id="pScale" min="10" max="400" value="100"></div>
-    <div class="row"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180" value="0"></div>
-    <div class="row"><button id="front">⬆ Öne</button><button id="back">⬇ Arkaya</button><button id="dup">⧉ Kopyala</button><button id="del">🗑 Sil</button></div>
-  </div>
-  <hr>
-  <button class="primary" id="save">⬇ Tasarımı PNG indir</button>
-  <div class="row" style="margin-top:8px"><button id="saveDesign" style="flex:1">Baskı dosyası (300 DPI)</button><button id="clear" style="flex:1">Temizle</button></div>
-</section>
-</main>
+  </aside>
 
+  <section class="stage">
+    <div class="wrap">
+      <div class="vp" id="vp"><canvas id="c" width="1080" height="1080"></canvas></div>
+      <div class="lbl">Tasarım Duvarı<br>120 x 120 cm (Sabit)</div>
+      <label class="tog">Baskı Alanı Göster <input type="checkbox" id="showArea" checked></label>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </section>
+
+  <aside class="opts card">
+    <section><h3>Ürün</h3><div class="prods" id="prods"></div></section>
+    <section><h3>Renk Seçimi</h3><div class="cols" id="cols"></div></section>
+    <section id="bedenBox"><h3>Beden Seçimi</h3><div class="sizes" id="bedens"></div></section>
+    <section id="printBox"><h3>Baskı Boyutu</h3><select id="sizeSel" style="margin:0"></select><div class="info" id="info"></div></section>
+    <section id="infoOnly" style="display:none"><div class="info" id="info2" style="margin:0"></div></section>
+    <section id="viewBox"><h3>Görünüm</h3><div class="views" id="views"></div></section>
+    <section><h3>Yakınlaştırma</h3>
+      <div class="zoom"><input type="range" id="zoom" min="50" max="300" value="100"><span id="zoomLbl" style="width:46px">100%</span>
+      <button class="ib" id="zin">🔍+</button><button class="ib" id="zout">🔍−</button><button class="ib" id="zfit">⤢</button></div>
+    </section>
+  </aside>
+</div>
+
+<dialog id="dlg">
+  <h3 style="margin-top:0">Ön İzleme</h3>
+  <div class="pv" id="pv"></div>
+  <div class="r" style="margin-top:14px;justify-content:center" id="pvBtns"></div>
+  <div class="r" style="justify-content:center"><button class="sm" id="dlgClose">Kapat</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script src="qrcode.js"></script>
+<script src="qrcode_utf8.js"></script>
 <script>
-const cv = document.getElementById('c'); let ctx = cv.getContext('2d');
-// s: piksel/cm ölçeği. Tüm baskı alanları gerçek cm ölçülerinden hesaplanır.
-const GIYIM_BOYUTLARI = [
-  {n:'Logo 8×8 cm (sol göğüs)',w:8,h:8,dx:42,top:190},
+const W=720, S=6, CX=360, CY=380, R=1.5;      // duvar 120x120 cm = 720 birim, 6 birim = 1 cm
+const cv=document.getElementById('c'); let ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+function el(t,p={},parent){const e=Object.assign(document.createElement(t),p);parent&&parent.append(e);return e}
+
+const BEDEN={S:[49,69],M:[52,71],L:[55,73],XL:[58,75],'2XL':[62,77],'3XL':[67,80],'4XL':[73,84],'5XL':[81,89]};
+const GIYIM_BASKI=[
+  {n:'Logo 8×8 cm (sol göğüs)',w:8,h:8,logo:true},
   {n:'A4 dikey 21×29,7 cm',w:21,h:29.7},
   {n:'A4 yatay 29,7×21 cm',w:29.7,h:21},
   {n:'A3 dikey 29,7×42 cm',w:29.7,h:42}
 ];
-const PRODUCTS = {
-  tisort:{name:'👕 Tişört', def:1, s:4.4, cx:300, top:175, sizes:GIYIM_BOYUTLARI},
-  sweat:{name:'🧥 Sweatshirt', def:1, s:4.4, cx:300, top:175, sizes:GIYIM_BOYUTLARI},
-  sapka:{name:'🧢 Şapka', s:15, cx:300, cy:260, fixed:{n:'Şapka 20×8 cm',w:20,h:8}},
-  kupa:{name:'☕ Kupa', s:15, cx:255, cy:295, fixed:{n:'Kupa 9×20 cm (açık baskı)',w:20,h:9}},
-  kalas:{name:'🖼️ Kanvas', s:9, cx:300, cy:300, def:0, bleed:3.75, sizes:[
+const PRODUCTS={
+  tisort:{name:'Tişört',kind:'giyim',sizes:GIYIM_BASKI,def:1,tz:1,zoom:100},
+  sweat:{name:'Sweatshirt',kind:'giyim',sizes:GIYIM_BASKI,def:1,tz:1,zoom:100},
+  hoodie:{name:'Hoodie',kind:'giyim',sizes:GIYIM_BASKI,def:1,tz:1,zoom:100},
+  sapka:{name:'Şapka',kind:'sapka',sizes:[{n:'Şapka 20×8 cm',w:20,h:8}],def:0,tz:2.6,zoom:250},
+  kupa:{name:'Kupa',kind:'kupa',sizes:[{n:'Kupa 9×20 cm (açık baskı)',w:20,h:9}],def:0,tz:2.4,zoom:250},
+  kanvas:{name:'Kanvas',kind:'kanvas',def:0,tz:1.1,zoom:100,bleed:3.75,sizes:[
     {n:'Kanvas dikey 35×50 cm (+3,75 cm katlama payı)',w:42.5,h:57.5},
-    {n:'Kanvas yatay 50×35 cm (+3,75 cm katlama payı)',w:57.5,h:42.5}
-  ]}
+    {n:'Kanvas yatay 50×35 cm (+3,75 cm katlama payı)',w:57.5,h:42.5}]}
 };
-let sizeIdx = 1;
-function getArea(){
-  const P=PRODUCTS[product],cm=P.sizes?P.sizes[sizeIdx]:P.fixed,w=cm.w*P.s,h=cm.h*P.s;
-  const top=cm.top??P.top;return {x:P.cx+(cm.dx||0)-w/2,y:top!=null?top:P.cy-h/2,w,h,cm};
-}
-const COLORS = ['#ffffff','#111111','#e8465a','#2f6fed','#1fa971','#f5c518','#ff8c42','#8e5ad7','#9aa3b2','#d9b38c'];
-const EMOJIS = ['😀','😍','🔥','⭐','❤️','🎉','🐱','🐶','🌈','⚽','🎸','🚀'];
-let product = 'tisort', color = '#ffffff', items = [], sel = null;
+const COLORS=[['Beyaz','#ffffff'],['Siyah','#1a1a1a'],['Lacivert','#1f2a44'],['Gri','#a8a8a8'],['Bej','#e3d9c0'],['Yeşil','#4b6b22']];
+const VIEWS=[['on','Ön'],['arka','Arka'],['solyan','Sol Yan'],['sagyan','Sağ Yan'],['yaka','Yaka Detayı']];
+const EMOJIS=['😀','😍','🔥','⭐','❤️','🎉','🐱','🐶','🌈','⚽','🎸','🚀'];
+const SHAPES=[['rect','▭'],['circle','●'],['star','★'],['heart','♥'],['tri','▲']];
+const PRESETS=[
+  {n:'⭐ Yıldız Rozeti',items:[{type:'shape',shape:'star',size:.8,fill:'#e8465a'},{type:'text',text:'STAR',size:.18,fill:'#ffffff',font:'Impact'}]},
+  {n:'❤ Aşk',items:[{type:'shape',shape:'heart',size:.8,fill:'#e8465a'},{type:'text',text:'LOVE',size:.16,fill:'#ffffff',font:'Georgia'}]},
+  {n:'🚀 Hayal Et',items:[{type:'text',text:'🚀',size:.45,dy:-.12},{type:'text',text:'HAYAL ET',size:.14,dy:.28,font:'Impact'}]},
+  {n:'🏆 Takım',items:[{type:'shape',shape:'circle',size:.8,fill:'#1f2a44'},{type:'text',text:'TAKIM',size:.17,fill:'#ffffff',font:'Impact'}]},
+  {n:'🎉 Mutlu Yıllar',items:[{type:'text',text:'🎉',size:.4,dy:-.15},{type:'text',text:'Mutlu Yıllar',size:.12,dy:.25,font:'Brush Script MT'}]},
+  {n:'🐺 Kurt',items:[{type:'text',text:'🐺',size:.5,dy:-.1},{type:'text',text:'WOLFLANO',size:.12,dy:.3,font:'Impact'}]}
+];
 
-function el(t,p={},parent){const e=Object.assign(document.createElement(t),p);parent&&parent.append(e);return e}
-const $ = id => document.getElementById(id);
-function fillSizes(){const P=PRODUCTS[product];$('sizeSel').innerHTML='';(P.sizes||[]).forEach((o,i)=>el('option',{value:i,textContent:o.n},$('sizeSel')));$('sizeSel').value=sizeIdx}
-$('sizeSel').onchange=e=>{sizeIdx=+e.target.value;refresh()};
-
-Object.entries(PRODUCTS).forEach(([k,v])=>{
-  const b = el('button',{textContent:v.name},$('products')); b.dataset.k=k;
-  b.onclick=()=>{product=k;sizeIdx=PRODUCTS[k].def||0;items=[];sel=null;fillSizes();refresh()};
-});
-COLORS.forEach(c=>{const b=el('button',{className:'sw'},$('colors'));b.style.background=c;b.dataset.c=c;b.onclick=()=>{color=c;draw();syncUI()}});
-EMOJIS.forEach(e=>{el('button',{textContent:e,onclick:()=>add({type:'text',text:e,size:80,fill:'#000',font:'Arial'})},$('emojis'))});
+// ---- durum
+let product='tisort', view='on', color='#ffffff', colorName='Beyaz', beden='L', zoom=100, showArea=true;
+const sizeIdx={}; Object.keys(PRODUCTS).forEach(k=>sizeIdx[k]=PRODUCTS[k].def);
+let designs={}, bgs={}, sel=null;
+const key=(p=product,v=view)=>p+'|'+v;
+const cur=()=>designs[key()]||(designs[key()]=[]);
+const isGiyim=(p=product)=>PRODUCTS[p].kind==='giyim';
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,v+amt));return `rgb(${f(n>>16)},${f((n>>8)&255)},${f(n&255)})`}
-
-function drawProduct(){
-  ctx.fillStyle='#f7f7fa';ctx.fillRect(0,0,600,600);
-  ctx.fillStyle=color;ctx.strokeStyle=shade(color,-50);ctx.lineWidth=3;
-  ctx.beginPath();
-  if(product==='tisort'){
-    ctx.moveTo(220,110);ctx.quadraticCurveTo(300,160,380,110);ctx.lineTo(480,160);ctx.lineTo(440,240);ctx.lineTo(405,220);ctx.lineTo(405,470);ctx.lineTo(195,470);ctx.lineTo(195,220);ctx.lineTo(160,240);ctx.lineTo(120,160);ctx.closePath();
-  }else if(product==='sweat'){
-    ctx.moveTo(225,105);ctx.quadraticCurveTo(300,150,375,105);ctx.lineTo(490,170);ctx.lineTo(520,420);ctx.lineTo(450,430);ctx.lineTo(410,260);ctx.lineTo(410,480);ctx.lineTo(190,480);ctx.lineTo(190,260);ctx.lineTo(150,430);ctx.lineTo(80,420);ctx.lineTo(110,170);ctx.closePath();
-  }else if(product==='sapka'){
-    ctx.moveTo(150,330);ctx.lineTo(150,200);ctx.quadraticCurveTo(150,175,180,175);ctx.lineTo(420,175);ctx.quadraticCurveTo(450,175,450,200);ctx.lineTo(450,330);ctx.closePath();
-    ctx.fill();ctx.stroke();ctx.beginPath();
-    ctx.moveTo(130,330);ctx.quadraticCurveTo(300,420,470,330);ctx.quadraticCurveTo(300,350,130,330);ctx.closePath();
-    ctx.fillStyle=shade(color,-25);
-  }else if(product==='kupa'){
-    ctx.roundRect(100,220,310,150,12);ctx.fill();ctx.stroke();
-    ctx.beginPath();ctx.lineWidth=18;ctx.strokeStyle=shade(color,-30);ctx.arc(410,295,42,-Math.PI/2,Math.PI/2);ctx.stroke();
-    ctx.lineWidth=3;ctx.strokeStyle=shade(color,-50);ctx.beginPath();ctx.roundRect(100,220,310,150,12);
-  }else{
-    const a=getArea();ctx.save();ctx.shadowColor='#0004';ctx.shadowBlur=18;ctx.shadowOffsetY=6;ctx.rect(a.x,a.y,a.w,a.h);ctx.fill();ctx.restore();ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);
+const curSize=(p=product)=>PRODUCTS[p].sizes[sizeIdx[p]];
+function dims(){const [e,b]=BEDEN[beden];return{E:e*S,B:b*S}}
+function getArea(p=product,v=view){
+  const cm=curSize(p),w=cm.w*S,h=cm.h*S;
+  if(isGiyim(p)){
+    const {E,B}=dims(),t=CY-B/2;
+    const dx=cm.logo&&v==='on'?0.15*E:0;      // sol göğüs: giyen kişinin solu = ekranda sağ
+    const top=t+(cm.logo?(v==='on'?14:10):9)*S;
+    return{x:CX+dx-w/2,y:top,w,h,cm};
   }
-  ctx.fill();ctx.stroke();
-  if(product==='kalas'){ // katlama payı gölgesi ve ön yüz çizgisi
-    const a=getArea(),b=PRODUCTS.kalas.bleed*PRODUCTS.kalas.s;
-    ctx.save();ctx.fillStyle='#0000000d';ctx.fillRect(a.x,a.y,a.w,b);ctx.fillRect(a.x,a.y+a.h-b,a.w,b);ctx.fillRect(a.x,a.y+b,b,a.h-2*b);ctx.fillRect(a.x+a.w-b,a.y+b,b,a.h-2*b);
-    ctx.strokeStyle='#0003';ctx.lineWidth=1;ctx.strokeRect(a.x+b,a.y+b,a.w-2*b,a.h-2*b);ctx.restore();
-  }
+  return{x:CX-w/2,y:CY-h/2,w,h,cm};
 }
 
+// ---- ürün çizimi (duvar koordinatlarında)
+function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
+function drawGarment(p,v,col){
+  const {E,B}=dims(),t=CY-B/2,b=CY+B/2,front=v==='on';
+  const nd=front?0.15*E:0.045*E, X=CX;
+  const L=(x,y)=>ctx.lineTo(X+x*E,t+y*B);
+  if(p==='hoodie'){
+    ctx.beginPath();ctx.ellipse(X,t+(front?0:0.1*B),0.24*E,front?0.075*B:0.1*B,0,0,7);
+    ctx.fillStyle=shade(col,-14);ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.fill();ctx.stroke();
+  }
+  ctx.beginPath();ctx.moveTo(X-.22*E,t);ctx.quadraticCurveTo(X,t+nd*2,X+.22*E,t);
+  if(p==='tisort'){
+    L(.52,.05);L(.64,.27);L(.50,.34);ctx.lineTo(X+.5*E,b);ctx.lineTo(X-.5*E,b);L(-.50,.34);L(-.64,.27);L(-.52,.05);
+  }else{
+    L(.52,.05);L(.70,.80);L(.58,.82);L(.50,.32);ctx.lineTo(X+.5*E,b);ctx.lineTo(X-.5*E,b);L(-.50,.32);L(-.58,.82);L(-.70,.80);L(-.52,.05);
+  }
+  ctx.closePath();fillStroke(col);
+  ctx.strokeStyle=shade(col,-22);ctx.lineWidth=p==='hoodie'?4:7;
+  ctx.beginPath();ctx.moveTo(X-.22*E,t);ctx.quadraticCurveTo(X,t+nd*2,X+.22*E,t);ctx.stroke();
+  if(p!=='tisort'){ // bel ve manşet lastikleri
+    ctx.fillStyle=shade(col,-12);ctx.strokeStyle=shade(col,-55);ctx.lineWidth=1.5;
+    ctx.fillRect(X-.5*E,b-.07*B,E,.07*B);ctx.strokeRect(X-.5*E,b-.07*B,E,.07*B);
+    [-1,1].forEach(s=>{ctx.beginPath();ctx.moveTo(X+s*.70*E,t+.80*B);ctx.lineTo(X+s*.58*E,t+.82*B);ctx.lineTo(X+s*.585*E,t+.755*B);ctx.lineTo(X+s*.695*E,t+.735*B);ctx.closePath();ctx.fill();ctx.stroke()});
+  }
+  if(p==='hoodie'&&front){
+    ctx.strokeStyle=shade(col,-45);ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(X-.3*E,t+.64*B);ctx.lineTo(X+.3*E,t+.64*B);ctx.lineTo(X+.34*E,b-.1*B);ctx.lineTo(X-.34*E,b-.1*B);ctx.closePath();ctx.stroke();
+    ctx.strokeStyle=shade(col,col==='#ffffff'?-35:60);ctx.lineWidth=3;
+    [-1,1].forEach(s=>{ctx.beginPath();ctx.moveTo(X+s*.06*E,t+nd);ctx.lineTo(X+s*.07*E,t+nd+.14*B);ctx.stroke()});
+  }
+}
+function drawCap(col){
+  const X=CX,Y=CY;ctx.beginPath();ctx.moveTo(X-11*S,Y+5.5*S);ctx.lineTo(X-11*S,Y-3*S);ctx.quadraticCurveTo(X-11*S,Y-7*S,X-6*S,Y-7*S);
+  ctx.lineTo(X+6*S,Y-7*S);ctx.quadraticCurveTo(X+11*S,Y-7*S,X+11*S,Y-3*S);ctx.lineTo(X+11*S,Y+5.5*S);ctx.closePath();fillStroke(col);
+  ctx.beginPath();ctx.arc(X,Y-7*S,.8*S,0,7);ctx.fillStyle=shade(col,-25);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(X-12*S,Y+5.5*S);ctx.quadraticCurveTo(X,Y+13*S,X+12*S,Y+5.5*S);ctx.quadraticCurveTo(X,Y+7.5*S,X-12*S,Y+5.5*S);ctx.closePath();
+  ctx.fillStyle=shade(col,-25);ctx.fill();ctx.stroke();
+}
+function drawMug(col){
+  const X=CX,Y=CY;ctx.save();ctx.beginPath();ctx.lineWidth=1.8*S;ctx.strokeStyle=shade(col,-30);ctx.arc(X+10.5*S,Y,4*S,-Math.PI/2,Math.PI/2);ctx.stroke();ctx.restore();
+  ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5*S,21*S,10*S,.7*S);fillStroke(col);
+}
+function drawCanvasBoard(col,p){
+  const a=getArea(p,'on'),b=PRODUCTS.kanvas.bleed*S;
+  ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);fillStroke(col);
+  ctx.fillStyle='#0000000d';ctx.fillRect(a.x,a.y,a.w,b);ctx.fillRect(a.x,a.y+a.h-b,a.w,b);ctx.fillRect(a.x,a.y+b,b,a.h-2*b);ctx.fillRect(a.x+a.w-b,a.y+b,b,a.h-2*b);
+  ctx.strokeStyle='#0003';ctx.lineWidth=1;ctx.strokeRect(a.x+b,a.y+b,a.w-2*b,a.h-2*b);
+}
+function drawProduct(p,v,col){
+  const k=PRODUCTS[p].kind;
+  if(k==='giyim')drawGarment(p,v,col);else if(k==='sapka')drawCap(col);else if(k==='kupa')drawMug(col);else drawCanvasBoard(col,p);
+}
+function drawWall(){
+  const g=ctx.createRadialGradient(CX,CY,60,CX,CY,520);g.addColorStop(0,'#9a9a9a');g.addColorStop(1,'#858585');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,W);
+}
+function drawGuides(){
+  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=2;ctx.strokeRect(2,2,W-4,W-4);ctx.setLineDash([]);
+  ctx.strokeStyle='#fff';ctx.fillStyle='#fff';ctx.lineWidth=1.5;ctx.font='16px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+  const arrow=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();const a=Math.atan2(y2-y1,x2-x1);
+    [[x1,y1,a+Math.PI],[x2,y2,a]].forEach(([x,y,r])=>{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+9*Math.cos(r+2.7),y+9*Math.sin(r+2.7));ctx.lineTo(x+9*Math.cos(r-2.7),y+9*Math.sin(r-2.7));ctx.closePath();ctx.fill()})};
+  arrow(40,26,W-40,26);ctx.fillStyle='#8a8a8a';ctx.fillRect(CX-34,16,68,20);ctx.fillStyle='#fff';ctx.fillText('120 cm',CX,26);
+  arrow(26,60,26,W-60);ctx.save();ctx.translate(26,CY);ctx.rotate(-Math.PI/2);ctx.fillStyle='#8a8a8a';ctx.fillRect(-34,-10,68,20);ctx.fillStyle='#fff';ctx.fillText('120 cm',0,0);ctx.restore();
+  ctx.restore();
+}
+
+// ---- öğeler
 function itemSize(it){
-  if(it.type==='text'){ctx.font=`${it.size}px ${it.font}`;const lines=it.text.split('\n');return{w:Math.max(...lines.map(l=>ctx.measureText(l).width)),h:lines.length*it.size*1.15}}
+  if(it.type==='text'){ctx.font=`${it.size}px ${it.font}`;const l=it.text.split('\n');return{w:Math.max(...l.map(s=>ctx.measureText(s).width)),h:l.length*it.size*1.15}}
   if(it.type==='image')return{w:it.img.width*it.s,h:it.img.height*it.s};
   return{w:it.size,h:it.size};
 }
 function shapePath(it,w,h){
-  ctx.beginPath();
+  ctx.beginPath();const s=w/2;
   if(it.shape==='rect')ctx.rect(-w/2,-h/2,w,h);
   else if(it.shape==='circle')ctx.ellipse(0,0,w/2,h/2,0,0,7);
+  else if(it.shape==='tri'){ctx.moveTo(0,-s);ctx.lineTo(s,s*.8);ctx.lineTo(-s,s*.8);ctx.closePath()}
   else if(it.shape==='star'){for(let i=0;i<10;i++){const r=i%2?w*.2:w/2,a=-Math.PI/2+i*Math.PI/5;ctx[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath()}
-  else{const s=w/2;ctx.moveTo(0,s*.9);ctx.bezierCurveTo(-s*1.4,s*.1,-s*.7,-s,0,-s*.4);ctx.bezierCurveTo(s*.7,-s,s*1.4,s*.1,0,s*.9);ctx.closePath()}
+  else{ctx.moveTo(0,s*.9);ctx.bezierCurveTo(-s*1.4,s*.1,-s*.7,-s,0,-s*.4);ctx.bezierCurveTo(s*.7,-s,s*1.4,s*.1,0,s*.9);ctx.closePath()}
 }
 function drawItem(it){
-  const {w,h}=itemSize(it);
-  ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.rot*Math.PI/180);
+  const {w,h}=itemSize(it);ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.rot*Math.PI/180);
   if(it.type==='text'){
     ctx.font=`${it.size}px ${it.font}`;ctx.fillStyle=it.fill;ctx.textAlign='center';ctx.textBaseline='middle';
-    const lines=it.text.split('\n'),lh=it.size*1.15;
-    lines.forEach((l,i)=>ctx.fillText(l,0,(i-(lines.length-1)/2)*lh));
+    const l=it.text.split('\n'),lh=it.size*1.15;l.forEach((s,i)=>ctx.fillText(s,0,(i-(l.length-1)/2)*lh));
   }else if(it.type==='image')ctx.drawImage(it.img,-w/2,-h/2,w,h);
   else{shapePath(it,w,h);ctx.fillStyle=it.fill;ctx.fill()}
   ctx.restore();
 }
-function draw(opts={}){
-  const a=getArea();
-  if(!opts.designOnly)drawProduct();
-  else ctx.clearRect(0,0,600,600);
-  ctx.save();ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);ctx.clip();
-  items.forEach(drawItem);ctx.restore();
-  if(opts.clean)return;
-  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#e8465a';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore();
-  if(sel){
-    const {w,h}=itemSize(sel);
-    ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);
-    ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5;ctx.strokeRect(-w/2,-h/2,w,h);ctx.restore();
-  }
+function drawDesign(p,v){
+  const a=getArea(p,v);ctx.save();ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);ctx.clip();
+  if(bgs[key(p,v)]){ctx.fillStyle=bgs[key(p,v)];ctx.fillRect(a.x,a.y,a.w,a.h)}
+  (designs[key(p,v)]||[]).forEach(drawItem);ctx.restore();
 }
 
-function add(it){
-  const a=getArea();
-  Object.assign(it,{x:a.x+a.w/2,y:a.y+a.h/2,rot:0});
-  if(it.type==='shape'){it.size=Math.min(a.w,a.h)*.5;it.fill='#e8465a'}
-  items.push(it);sel=it;syncUI();draw();
+// c: hedef canvas. o.ui=true → kılavuzlar/seçim çizilir
+function render(c,o={}){
+  const p=o.p||product,v=o.v||view,prev=ctx;ctx=c.getContext('2d');ctx.setTransform(c.width/W,0,0,c.width/W,0,0);
+  drawWall();drawProduct(p,v,color);drawDesign(p,v);
+  if(o.ui){
+    drawGuides();
+    if(showArea){const a=getArea(p,v);ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore()}
+    if(sel){const {w,h}=itemSize(sel);ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5;ctx.strokeRect(-w/2,-h/2,w,h);ctx.restore()}
+  }
+  ctx=prev;
 }
-$('addText').onclick=()=>{const t=$('txt').value.trim()||'Yazı';add({type:'text',text:t,size:40,fill:'#000000',font:'Arial'});$('txt').value=''};
-$('addImg').onclick=()=>$('file').click();
+function draw(){render(cv,{ui:true})}
+function thumb(c,p,v,col,bg){
+  const prev=ctx;ctx=c.getContext('2d');const k=c.width/W*PRODUCTS[p].tz;
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height);
+  ctx.setTransform(k,0,0,k,c.width/2-CX*k,c.height/2-CY*k);
+  const sv=color;drawProduct(p,v,col);ctx=prev;
+}
+
+// ---- geçmiş
+const hist=[],redoSt=[];
+const clone=s=>({designs:Object.fromEntries(Object.entries(s.designs).map(([k,a])=>[k,a.map(i=>({...i}))])),bgs:{...s.bgs}});
+function commit(){hist.push(clone({designs,bgs}));if(hist.length>60)hist.shift();redoSt.length=0;syncHist()}
+function restore(s){const c=clone(s);designs=c.designs;bgs=c.bgs;sel=null;syncUI();draw()}
+function syncHist(){$('undo').disabled=hist.length<2;$('redo').disabled=!redoSt.length}
+$('undo').onclick=()=>{if(hist.length<2)return;redoSt.push(hist.pop());restore(hist[hist.length-1]);syncHist()};
+$('redo').onclick=()=>{if(!redoSt.length)return;const s=redoSt.pop();hist.push(s);restore(s);syncHist()};
+
+// ---- ekleme
+function add(it){
+  const a=getArea();Object.assign(it,{x:a.x+a.w/2,y:a.y+a.h/2,rot:0});
+  cur().push(it);sel=it;commit();syncUI();draw();
+}
+function setFly(t){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.querySelectorAll('.fly').forEach(f=>f.classList.toggle('on',f.id==='f-'+t));
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
+  const t=b.dataset.t;if(t==='image'){setFly('image');$('file').click();return}
+  setFly(document.getElementById('f-'+t).classList.contains('on')?'':t);
+});
+$('addText').onclick=()=>{const a=getArea();add({type:'text',text:$('txt').value.trim()||'Yazı',size:Math.round(Math.min(a.w,a.h)*.25),fill:'#000000',font:'Arial'});$('txt').value=''};
 $('file').onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const img=new Image();img.onload=()=>{const a=getArea();add({type:'image',img,s:Math.min(a.w/img.width,a.h/img.height)*.8})};
+  const f=e.target.files[0];if(!f)return;const img=new Image();
+  img.onload=()=>{const a=getArea();add({type:'image',img,s:Math.min(a.w/img.width,a.h/img.height)*.8})};
   img.src=URL.createObjectURL(f);e.target.value='';
 };
-document.querySelectorAll('[data-shape]').forEach(b=>b.onclick=()=>add({type:'shape',shape:b.dataset.shape}));
+SHAPES.forEach(([k,t])=>el('button',{className:'sm',textContent:t,onclick:()=>{const a=getArea();add({type:'shape',shape:k,size:Math.min(a.w,a.h)*.5,fill:'#e8465a'})}},$('shapes')));
+EMOJIS.forEach(e=>el('button',{className:'sm',textContent:e,onclick:()=>{const a=getArea();add({type:'text',text:e,size:Math.min(a.w,a.h)*.4,fill:'#000',font:'Arial'})}},$('emojis')));
+PRESETS.forEach(pr=>el('button',{className:'sm',textContent:pr.n,onclick:()=>{
+  const a=getArea(),m=Math.min(a.w,a.h);
+  pr.items.forEach(d=>{const it={type:d.type,rot:0,x:a.x+a.w/2,y:a.y+a.h/2+(d.dy||0)*m,fill:d.fill||'#000000',font:d.font||'Arial',size:d.size*m};
+    if(d.type==='text')it.text=d.text;else it.shape=d.shape;cur().push(it);sel=it});
+  commit();syncUI();draw();
+}},$('presets')));
+$('addQr').onclick=()=>{
+  const txt=$('qrText').value.trim();if(!txt){toast('Qr kod için bir bağlantı veya metin yazın');return}
+  const q=qrcode(0,'M');q.addData(txt);q.make();const n=q.getModuleCount(),m=10,pad=$('qrBg').checked?2:0,sz=(n+pad*2)*m;
+  const c=el('canvas',{width:sz,height:sz}),x=c.getContext('2d');
+  if(pad){x.fillStyle='#fff';x.fillRect(0,0,sz,sz)}
+  x.fillStyle=$('qrColor').value;
+  for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect((k+pad)*m,(r+pad)*m,m,m);
+  const a=getArea();add({type:'image',img:c,s:Math.min(a.w,a.h)*.5/sz});
+};
+$('bgSet').onclick=()=>{bgs[key()]=$('bgColor').value;commit();draw()};
+$('bgDel').onclick=()=>{delete bgs[key()];commit();draw()};
 
-function syncUI(){
-  const P=PRODUCTS[product];$('sizeBox').style.display=P.sizes?'block':'none';
-  $('areaInfo').textContent='Baskı alanı: '+(P.sizes?P.sizes[sizeIdx]:P.fixed).n;
-  document.querySelectorAll('#products button').forEach(b=>b.classList.toggle('active',b.dataset.k===product));
-  document.querySelectorAll('.sw').forEach(b=>b.classList.toggle('active',b.dataset.c===color));
-  $('props').style.display=sel?'block':'none';$('none').style.display=sel?'none':'block';
-  if(!sel)return;
-  $('textProps').style.display=sel.type==='text'?'block':'none';
-  $('colorRow').style.display=sel.type==='image'?'none':'flex';
-  if(sel.type==='text'){$('pText').value=sel.text;$('pFont').value=sel.font}
-  if(sel.type!=='image')$('pColor').value=sel.fill;
-  $('pScale').value=sel.type==='text'?sel.size*2.5:sel.type==='image'?sel.s*100:sel.size/1.5;
-  $('pRot').value=sel.rot;
-}
-function refresh(){syncUI();draw()}
+// ---- seçili öğe paneli (boyut cm cinsinden)
+const toCm=it=>it.type==='text'?it.size/S:it.type==='image'?it.img.width*it.s/S:it.size/S;
+function fromCm(it,cm){if(it.type==='text')it.size=cm*S;else if(it.type==='image')it.s=cm*S/it.img.width;else it.size=cm*S}
 $('pText').oninput=e=>{sel.text=e.target.value||' ';draw()};
-$('pFont').onchange=e=>{sel.font=e.target.value;draw()};
+$('pFont').onchange=e=>{sel.font=e.target.value;commit();draw()};
 $('pColor').oninput=e=>{sel.fill=e.target.value;draw()};
 $('pRot').oninput=e=>{sel.rot=+e.target.value;draw()};
-$('pScale').oninput=e=>{const v=+e.target.value;
-  if(sel.type==='text')sel.size=v/2.5;else if(sel.type==='image')sel.s=v/100;else sel.size=v*1.5;draw()};
-$('del').onclick=()=>{items=items.filter(i=>i!==sel);sel=null;refresh()};
-$('dup').onclick=()=>{if(!sel)return;const c={...sel,x:sel.x+15,y:sel.y+15};items.push(c);sel=c;refresh()};
-$('front').onclick=()=>{if(!sel)return;items=items.filter(i=>i!==sel);items.push(sel);draw()};
-$('back').onclick=()=>{if(!sel)return;items=items.filter(i=>i!==sel);items.unshift(sel);draw()};
-$('clear').onclick=()=>{if(confirm('Tüm tasarım silinsin mi?')){items=[];sel=null;refresh()}};
+$('pScale').oninput=e=>{fromCm(sel,+e.target.value);$('sizeLbl').textContent=(+e.target.value)+' cm';draw()};
+['pText','pColor','pRot','pScale'].forEach(i=>$(i).onchange=()=>commit());
+$('del').onclick=()=>{cur().splice(cur().indexOf(sel),1);sel=null;commit();syncUI();draw()};
+$('dup').onclick=()=>{if(!sel)return;const c={...sel,x:sel.x+12,y:sel.y+12};cur().push(c);sel=c;commit();syncUI();draw()};
+$('front').onclick=()=>{if(!sel)return;const a=cur();a.push(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
+$('back').onclick=()=>{if(!sel)return;const a=cur();a.unshift(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
 
-function download(designOnly){
-  const prev=sel;sel=null;
-  const a=getArea();let url;
-  if(designOnly){ // 300 DPI, gerçek cm boyutunda
-    const k=300/2.54/PRODUCTS[product].s;
-    const o=el('canvas',{width:Math.round(a.cm.w/2.54*300),height:Math.round(a.cm.h/2.54*300)});
-    const main=ctx;ctx=o.getContext('2d');ctx.scale(k,k);ctx.translate(-a.x,-a.y);
-    items.forEach(drawItem);ctx=main;url=o.toDataURL('image/png');
-  }else{draw({clean:true});url=cv.toDataURL('image/png')}
-  el('a',{href:url,download:`tasarim-${product}${designOnly?'-baski-300dpi':''}.png`}).click();
-  sel=prev;draw();
-}
-$('save').onclick=()=>download(false);
-$('saveDesign').onclick=()=>download(true);
-
-// sürükleme
-function pos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*600/r.width,y:(e.clientY-r.top)*600/r.height}}
+// ---- sürükleme
+function pos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*W/r.height}}
 function hit(it,p){
   const {w,h}=itemSize(it),a=-it.rot*Math.PI/180,dx=p.x-it.x,dy=p.y-it.y;
-  const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);
-  return Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2;
+  const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);return Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2;
 }
-let drag=null;
+let drag=null,moved=false;
 cv.onpointerdown=e=>{
-  const p=pos(e);sel=[...items].reverse().find(i=>hit(i,p))||null;
-  if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};
-  cv.setPointerCapture(e.pointerId);syncUI();draw();
+  const p=pos(e);sel=[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
+  if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};cv.setPointerCapture(e.pointerId);syncSel();draw();
 };
-cv.onpointermove=e=>{if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;draw()};
-cv.onpointerup=()=>drag=null;
-window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))$('del').click()};
+cv.onpointermove=e=>{if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;moved=true;draw()};
+cv.onpointerup=()=>{if(drag&&moved)commit();drag=null};
+window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))$('del').click()};
 
-fillSizes();refresh();
+// ---- sağ panel
+function reflow(fn){ // beden/baskı boyutu değişince öğeleri baskı alanıyla birlikte kaydır
+  const keys=Object.keys(designs).filter(k=>k.startsWith(product+'|')),old={};
+  keys.forEach(k=>old[k]=getArea(product,k.split('|')[1]));fn();
+  keys.forEach(k=>{const n=getArea(product,k.split('|')[1]),o=old[k];
+    const dx=n.x+n.w/2-o.x-o.w/2,dy=n.y+n.h/2-o.y-o.h/2;designs[k].forEach(i=>{i.x+=dx;i.y+=dy})});
+}
+function buildStatic(){
+  Object.entries(PRODUCTS).forEach(([k,P])=>{
+    const b=el('button',{title:P.name},$('prods'));b.dataset.k=k;const c=el('canvas',{width:120,height:120},b);b.append(P.name);
+    b.onclick=()=>{
+      product=k;view='on';sel=null;const sz=sizeIdx[k];zoom=P.zoom;
+      syncUI();draw();setZoom(zoom,true);
+    };
+  });
+  COLORS.forEach(([n,c])=>{const b=el('button',{title:n},$('cols'));b.style.background=c;b.dataset.c=c;
+    b.onclick=()=>{color=c;colorName=n;syncUI();draw()}});
+  Object.keys(BEDEN).forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
+    b.onclick=()=>{reflow(()=>beden=s);syncUI();draw()}});
+  [['on','Ön'],['arka','Arka']].forEach(([v,n])=>{const b=el('button',{},$('views'));b.dataset.v=v;el('canvas',{width:200,height:200},b);b.append(n);
+    b.onclick=()=>{view=v;sel=null;syncUI();draw()}});
+  $('sizeSel').onchange=e=>{reflow(()=>sizeIdx[product]=+e.target.value);syncUI();draw()};
+}
+function syncSel(){
+  $('sel').style.display=sel?'block':'none';if(!sel)return;
+  $('selText').style.display=sel.type==='text'?'block':'none';
+  $('selColor').style.display=sel.type==='image'?'none':'flex';
+  if(sel.type==='text'){$('pText').value=sel.text;$('pFont').value=sel.font}
+  if(sel.type!=='image')$('pColor').value=sel.fill;
+  const cm=Math.round(toCm(sel)*2)/2;$('pScale').value=cm;$('sizeLbl').textContent=cm+' cm';$('pRot').value=sel.rot;
+}
+function syncUI(){
+  const P=PRODUCTS[product],g=isGiyim();
+  document.querySelectorAll('#prods button').forEach(b=>{b.classList.toggle('on',b.dataset.k===product);thumb(b.firstChild,b.dataset.k,'on',color,'#dcdce6')});
+  document.querySelectorAll('#cols button').forEach(b=>b.classList.toggle('on',b.dataset.c===color));
+  document.querySelectorAll('#bedens button').forEach(b=>b.classList.toggle('on',b.dataset.b===beden));
+  $('bedenBox').style.display=g?'block':'none';$('viewBox').style.display=g?'block':'none';
+  const two=P.sizes.length>1;$('printBox').style.display=two?'block':'none';$('infoOnly').style.display=two?'none':'block';
+  $('sizeSel').innerHTML='';P.sizes.forEach((o,i)=>el('option',{value:i,textContent:o.n},$('sizeSel')));$('sizeSel').value=sizeIdx[product];
+  const [e,b]=BEDEN[beden],cm=curSize(),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
+  let info;
+  if(g)info=`${tee}<div><b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${e} cm</span><span>Boy: ${b} cm</span></div>`;
+  else if(P.kind==='kanvas')info=`<div><b>Kanvas Ölçüleri</b><span>Ön yüz: ${(cm.w-7.5).toString().replace('.',',')}×${(cm.h-7.5).toString().replace('.',',')} cm</span><span>Katlama payı: 3,75 cm</span></div>`;
+  else info=`<div><b>${P.name} Ölçüleri</b><span>Baskı alanı: ${cm.w}×${cm.h} cm</span></div>`;
+  $('info').innerHTML=info;$('info2').innerHTML=info;
+  document.querySelectorAll('#views button').forEach(x=>{x.classList.toggle('on',x.dataset.v===view);thumb(x.firstChild,product,x.dataset.v,color,'#8d8d8d')});
+  syncSel();syncHist();
+}
+
+// ---- yakınlaştırma
+function setZoom(z,center){
+  zoom=Math.max(50,Math.min(300,z));cv.style.width=zoom+'%';$('zoom').value=zoom;$('zoomLbl').textContent=Math.round(zoom)+'%';
+  if(center||zoom>100){const vp=$('vp');vp.scrollLeft=(cv.clientWidth-vp.clientWidth)/2;vp.scrollTop=CY/W*cv.clientHeight-vp.clientHeight/2}
+}
+$('zoom').oninput=e=>setZoom(+e.target.value);
+$('zin').onclick=()=>setZoom(zoom+25);$('zout').onclick=()=>setZoom(zoom-25);$('zfit').onclick=()=>setZoom(PRODUCTS[product].zoom,true);
+$('showArea').onchange=e=>{showArea=e.target.checked;draw()};
+
+// ---- ön izleme, indirme, sepet
+function viewsWithDesign(){return(isGiyim()?['on','arka']:['on']).filter(v=>(designs[key(product,v)]||[]).length||bgs[key(product,v)])}
+function download(url,name){el('a',{href:url,download:name}).click()}
+function exportDesign(v){ // 300 DPI, gerçek cm boyutunda
+  const a=getArea(product,v),k=300/2.54/S,c=el('canvas',{width:Math.round(a.cm.w/2.54*300),height:Math.round(a.cm.h/2.54*300)});
+  const prev=ctx;ctx=c.getContext('2d');ctx.scale(k,k);ctx.translate(-a.x,-a.y);
+  if(bgs[key(product,v)]){ctx.fillStyle=bgs[key(product,v)];ctx.fillRect(a.x,a.y,a.w,a.h)}
+  (designs[key(product,v)]||[]).forEach(drawItem);ctx=prev;return c.toDataURL('image/png');
+}
+$('preview').onclick=()=>{
+  sel=null;draw();const pv=$('pv');pv.innerHTML='';$('pvBtns').innerHTML='';
+  (isGiyim()?['on','arka']:['on']).forEach(v=>{
+    const c=el('canvas',{width:W,height:W});render(c,{v});const f=el('figure',{},pv);
+    el('img',{src:c.toDataURL('image/png')},f);el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
+    el('button',{className:'sm',textContent:`⬇ ${v==='on'?'Ön':'Arka'} ürün görseli`,onclick:()=>download(c.toDataURL('image/png'),`wolflano-${product}-${v}.png`)},$('pvBtns'));
+  });
+  viewsWithDesign().forEach(v=>el('button',{className:'sm',textContent:`⬇ ${v==='on'?'Ön':'Arka'} baskı dosyası (300 DPI)`,onclick:()=>download(exportDesign(v),`wolflano-${product}-${v}-baski-300dpi.png`)},$('pvBtns')));
+  $('dlg').showModal();
+};
+$('dlgClose').onclick=()=>$('dlg').close();
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)}
+$('cart').onclick=()=>{
+  const vs=viewsWithDesign();if(!vs.length){toast('Önce bir tasarım ekleyin');return}
+  const detail={urun:PRODUCTS[product].name,renk:colorName,beden:isGiyim()?beden:null,baski:curSize().n,gorunumler:{}};
+  vs.forEach(v=>{const c=el('canvas',{width:W,height:W});render(c,{v});detail.gorunumler[v]={onizleme:c.toDataURL('image/jpeg',.7),baski300dpi:exportDesign(v)}});
+  try{const l=JSON.parse(localStorage.getItem('wolflano_sepet')||'[]');l.push(detail);localStorage.setItem('wolflano_sepet',JSON.stringify(l.slice(-3)))}catch(e){}
+  window.dispatchEvent(new CustomEvent('wolflano:sepete-ekle',{detail}));
+  if(window.parent!==window)window.parent.postMessage({type:'wolflano:sepete-ekle',detail},'*');
+  toast('Sepete eklendi ✓');
+};
+
+buildStatic();commit();syncUI();draw();setZoom(100);
+window.addEventListener('resize',()=>{if(zoom>100)setZoom(zoom)});
 </script>
 </body>
 </html>
