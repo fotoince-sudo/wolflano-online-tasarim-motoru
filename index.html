@@ -552,8 +552,10 @@ function drawRuler(depth,reversed){
   }
   ctx.stroke();
 }
-function drawPrintArea({x,y,w,h}){
-  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;
+function drawPrintArea({x,y,w,h},garmentColor=color,lineWidth=2.25){
+  const rgb=parseInt(garmentColor.slice(1),16);
+  const luma=.2126*(rgb>>16)+.7152*((rgb>>8)&255)+.0722*(rgb&255);
+  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=luma<150?'#e7cbff':'#7142d7';ctx.lineWidth=lineWidth;
   ctx.strokeRect(x,y,w,h);ctx.restore();
 }
 
@@ -791,7 +793,7 @@ function productPreview(canvas,face,selectedColor,selectedSize,format){
   ctx.fillStyle='#e6e6ef';
   ctx.fillRect(0,0,W,W);
   drawGarment('tisort',face,selectedColor,selectedSize);
-  drawPrintArea(getArea('tisort',face,selectedSize,format));
+  drawPrintArea(getArea('tisort',face,selectedSize,format),selectedColor,3.5);
   ctx=prev;
 }
 function syncProductPage(){
