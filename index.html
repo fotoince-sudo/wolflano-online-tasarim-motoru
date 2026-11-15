@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasarım Stüdyosu</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:#f3f4f8;color:#222}
+header{background:#1f2440;color:#fff;padding:14px 24px;font-size:20px;font-weight:600}
+main{display:grid;grid-template-columns:280px 1fr 280px;gap:16px;padding:16px;max-width:1300px;margin:auto}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.panel{background:#fff;border-radius:12px;padding:16px;box-shadow:0 2px 8px #0001}
+h3{margin:0 0 10px;font-size:15px}
+.products{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+button,select,input,textarea{font:inherit}
+button{border:1px solid #ccd;background:#fff;border-radius:8px;padding:8px;cursor:pointer}
+button:hover{background:#eef}
+button.active{background:#1f2440;color:#fff;border-color:#1f2440}
+button.primary{background:#e8465a;color:#fff;border:0;width:100%;padding:12px;font-weight:600}
+.colors{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid #ccd;cursor:pointer;padding:0}
+.sw.active{outline:3px solid #e8465a}
+.stage{display:flex;flex-direction:column;align-items:center}
+canvas{background:#fff;border-radius:12px;max-width:100%;touch-action:none;cursor:move;box-shadow:0 2px 8px #0001}
+.row{display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.row label{font-size:13px;width:60px}
+.row input[type=range]{flex:1}
+textarea,select,input[type=text]{width:100%;padding:8px;border:1px solid #ccd;border-radius:8px;margin-bottom:8px}
+.emojis button{font-size:20px;padding:4px 8px}
+.hint{font-size:12px;color:#667;margin:6px 0}
+#props{display:none}
+</style>
+</head>
+<body>
+<header>🎨 Tasarım Stüdyosu — Kendi Ürününü Tasarla</header>
+<main>
+<section class="panel">
+  <h3>1. Ürün</h3>
+  <div class="products" id="products"></div>
+  <div id="sizeBox"><h3>2. Baskı boyutu</h3><select id="sizeSel"></select></div>
+  <h3>3. Ürün rengi</h3>
+  <div class="colors" id="colors"></div>
+  <h3>4. Ekle</h3>
+  <input type="text" id="txt" placeholder="Yazı yazın...">
+  <button id="addText" style="width:100%;margin-bottom:8px">➕ Yazı ekle</button>
+  <button id="addImg" style="width:100%;margin-bottom:8px">🖼️ Görsel yükle</button>
+  <input type="file" id="file" accept="image/*" hidden>
+  <div class="row"><button data-shape="rect">▭</button><button data-shape="circle">●</button><button data-shape="star">★</button><button data-shape="heart">♥</button></div>
+  <div class="emojis" id="emojis"></div>
+</section>
+
+<section class="stage">
+  <canvas id="c" width="600" height="600"></canvas>
+  <p class="hint" id="areaInfo"></p>
+  <p class="hint">Öğeyi sürükleyerek taşıyın. Kesikli çerçeve baskı alanıdır.</p>
+</section>
+
+<section class="panel">
+  <h3>Seçili öğe</h3>
+  <p class="hint" id="none">Düzenlemek için bir öğe seçin.</p>
+  <div id="props">
+    <div id="textProps">
+      <textarea id="pText" rows="2"></textarea>
+      <select id="pFont">
+        <option>Arial</option><option>Georgia</option><option>Impact</option>
+        <option>Courier New</option><option>Comic Sans MS</option><option>Brush Script MT</option>
+      </select>
+    </div>
+    <div class="row" id="colorRow"><label>Renk</label><input type="color" id="pColor" value="#000000"></div>
+    <div class="row"><label>Boyut</label><input type="range" id="pScale" min="10" max="400" value="100"></div>
+    <div class="row"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180" value="0"></div>
+    <div class="row"><button id="front">⬆ Öne</button><button id="back">⬇ Arkaya</button><button id="dup">⧉ Kopyala</button><button id="del">🗑 Sil</button></div>
+  </div>
+  <hr>
+  <button class="primary" id="save">⬇ Tasarımı PNG indir</button>
+  <div class="row" style="margin-top:8px"><button id="saveDesign" style="flex:1">Baskı dosyası (300 DPI)</button><button id="clear" style="flex:1">Temizle</button></div>
+</section>
+</main>
+
+<script>
+const cv = document.getElementById('c'); let ctx = cv.getContext('2d');
+// s: piksel/cm ölçeği. Tüm baskı alanları gerçek cm ölçülerinden hesaplanır.
+const GIYIM_BOYUTLARI = [
+  {n:'Logo 8×8 cm (sol göğüs)',w:8,h:8,dx:42,top:190},
+  {n:'A4 dikey 21×29,7 cm',w:21,h:29.7},
+  {n:'A4 yatay 29,7×21 cm',w:29.7,h:21},
+  {n:'A3 dikey 29,7×42 cm',w:29.7,h:42}
+];
+const PRODUCTS = {
+  tisort:{name:'👕 Tişört', def:1, s:4.4, cx:300, top:175, sizes:GIYIM_BOYUTLARI},
+  sweat:{name:'🧥 Sweatshirt', def:1, s:4.4, cx:300, top:175, sizes:GIYIM_BOYUTLARI},
+  sapka:{name:'🧢 Şapka', s:15, cx:300, cy:260, fixed:{n:'Şapka 20×8 cm',w:20,h:8}},
+  kupa:{name:'☕ Kupa', s:15, cx:255, cy:295, fixed:{n:'Kupa 9×20 cm (açık baskı)',w:20,h:9}},
+  kalas:{name:'🖼️ Kanvas', s:9, cx:300, cy:300, def:0, bleed:3.75, sizes:[
+    {n:'Kanvas dikey 35×50 cm (+3,75 cm katlama payı)',w:42.5,h:57.5},
+    {n:'Kanvas yatay 50×35 cm (+3,75 cm katlama payı)',w:57.5,h:42.5}
+  ]}
+};
+let sizeIdx = 1;
+function getArea(){
+  const P=PRODUCTS[product],cm=P.sizes?P.sizes[sizeIdx]:P.fixed,w=cm.w*P.s,h=cm.h*P.s;
+  const top=cm.top??P.top;return {x:P.cx+(cm.dx||0)-w/2,y:top!=null?top:P.cy-h/2,w,h,cm};
+}
+const COLORS = ['#ffffff','#111111','#e8465a','#2f6fed','#1fa971','#f5c518','#ff8c42','#8e5ad7','#9aa3b2','#d9b38c'];
+const EMOJIS = ['😀','😍','🔥','⭐','❤️','🎉','🐱','🐶','🌈','⚽','🎸','🚀'];
+let product = 'tisort', color = '#ffffff', items = [], sel = null;
+
+function el(t,p={},parent){const e=Object.assign(document.createElement(t),p);parent&&parent.append(e);return e}
+const $ = id => document.getElementById(id);
+function fillSizes(){const P=PRODUCTS[product];$('sizeSel').innerHTML='';(P.sizes||[]).forEach((o,i)=>el('option',{value:i,textContent:o.n},$('sizeSel')));$('sizeSel').value=sizeIdx}
+$('sizeSel').onchange=e=>{sizeIdx=+e.target.value;refresh()};
+
+Object.entries(PRODUCTS).forEach(([k,v])=>{
+  const b = el('button',{textContent:v.name},$('products')); b.dataset.k=k;
+  b.onclick=()=>{product=k;sizeIdx=PRODUCTS[k].def||0;items=[];sel=null;fillSizes();refresh()};
+});
+COLORS.forEach(c=>{const b=el('button',{className:'sw'},$('colors'));b.style.background=c;b.dataset.c=c;b.onclick=()=>{color=c;draw();syncUI()}});
+EMOJIS.forEach(e=>{el('button',{textContent:e,onclick:()=>add({type:'text',text:e,size:80,fill:'#000',font:'Arial'})},$('emojis'))});
+
+function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,v+amt));return `rgb(${f(n>>16)},${f((n>>8)&255)},${f(n&255)})`}
+
+function drawProduct(){
+  ctx.fillStyle='#f7f7fa';ctx.fillRect(0,0,600,600);
+  ctx.fillStyle=color;ctx.strokeStyle=shade(color,-50);ctx.lineWidth=3;
+  ctx.beginPath();
+  if(product==='tisort'){
+    ctx.moveTo(220,110);ctx.quadraticCurveTo(300,160,380,110);ctx.lineTo(480,160);ctx.lineTo(440,240);ctx.lineTo(405,220);ctx.lineTo(405,470);ctx.lineTo(195,470);ctx.lineTo(195,220);ctx.lineTo(160,240);ctx.lineTo(120,160);ctx.closePath();
+  }else if(product==='sweat'){
+    ctx.moveTo(225,105);ctx.quadraticCurveTo(300,150,375,105);ctx.lineTo(490,170);ctx.lineTo(520,420);ctx.lineTo(450,430);ctx.lineTo(410,260);ctx.lineTo(410,480);ctx.lineTo(190,480);ctx.lineTo(190,260);ctx.lineTo(150,430);ctx.lineTo(80,420);ctx.lineTo(110,170);ctx.closePath();
+  }else if(product==='sapka'){
+    ctx.moveTo(150,330);ctx.lineTo(150,200);ctx.quadraticCurveTo(150,175,180,175);ctx.lineTo(420,175);ctx.quadraticCurveTo(450,175,450,200);ctx.lineTo(450,330);ctx.closePath();
+    ctx.fill();ctx.stroke();ctx.beginPath();
+    ctx.moveTo(130,330);ctx.quadraticCurveTo(300,420,470,330);ctx.quadraticCurveTo(300,350,130,330);ctx.closePath();
+    ctx.fillStyle=shade(color,-25);
+  }else if(product==='kupa'){
+    ctx.roundRect(100,220,310,150,12);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.lineWidth=18;ctx.strokeStyle=shade(color,-30);ctx.arc(410,295,42,-Math.PI/2,Math.PI/2);ctx.stroke();
+    ctx.lineWidth=3;ctx.strokeStyle=shade(color,-50);ctx.beginPath();ctx.roundRect(100,220,310,150,12);
+  }else{
+    const a=getArea();ctx.save();ctx.shadowColor='#0004';ctx.shadowBlur=18;ctx.shadowOffsetY=6;ctx.rect(a.x,a.y,a.w,a.h);ctx.fill();ctx.restore();ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);
+  }
+  ctx.fill();ctx.stroke();
+  if(product==='kalas'){ // katlama payı gölgesi ve ön yüz çizgisi
+    const a=getArea(),b=PRODUCTS.kalas.bleed*PRODUCTS.kalas.s;
+    ctx.save();ctx.fillStyle='#0000000d';ctx.fillRect(a.x,a.y,a.w,b);ctx.fillRect(a.x,a.y+a.h-b,a.w,b);ctx.fillRect(a.x,a.y+b,b,a.h-2*b);ctx.fillRect(a.x+a.w-b,a.y+b,b,a.h-2*b);
+    ctx.strokeStyle='#0003';ctx.lineWidth=1;ctx.strokeRect(a.x+b,a.y+b,a.w-2*b,a.h-2*b);ctx.restore();
+  }
+}
+
+function itemSize(it){
+  if(it.type==='text'){ctx.font=`${it.size}px ${it.font}`;const lines=it.text.split('\n');return{w:Math.max(...lines.map(l=>ctx.measureText(l).width)),h:lines.length*it.size*1.15}}
+  if(it.type==='image')return{w:it.img.width*it.s,h:it.img.height*it.s};
+  return{w:it.size,h:it.size};
+}
+function shapePath(it,w,h){
+  ctx.beginPath();
+  if(it.shape==='rect')ctx.rect(-w/2,-h/2,w,h);
+  else if(it.shape==='circle')ctx.ellipse(0,0,w/2,h/2,0,0,7);
+  else if(it.shape==='star'){for(let i=0;i<10;i++){const r=i%2?w*.2:w/2,a=-Math.PI/2+i*Math.PI/5;ctx[i?'lineTo':'moveTo'](Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath()}
+  else{const s=w/2;ctx.moveTo(0,s*.9);ctx.bezierCurveTo(-s*1.4,s*.1,-s*.7,-s,0,-s*.4);ctx.bezierCurveTo(s*.7,-s,s*1.4,s*.1,0,s*.9);ctx.closePath()}
+}
+function drawItem(it){
+  const {w,h}=itemSize(it);
+  ctx.save();ctx.translate(it.x,it.y);ctx.rotate(it.rot*Math.PI/180);
+  if(it.type==='text'){
+    ctx.font=`${it.size}px ${it.font}`;ctx.fillStyle=it.fill;ctx.textAlign='center';ctx.textBaseline='middle';
+    const lines=it.text.split('\n'),lh=it.size*1.15;
+    lines.forEach((l,i)=>ctx.fillText(l,0,(i-(lines.length-1)/2)*lh));
+  }else if(it.type==='image')ctx.drawImage(it.img,-w/2,-h/2,w,h);
+  else{shapePath(it,w,h);ctx.fillStyle=it.fill;ctx.fill()}
+  ctx.restore();
+}
+function draw(opts={}){
+  const a=getArea();
+  if(!opts.designOnly)drawProduct();
+  else ctx.clearRect(0,0,600,600);
+  ctx.save();ctx.beginPath();ctx.rect(a.x,a.y,a.w,a.h);ctx.clip();
+  items.forEach(drawItem);ctx.restore();
+  if(opts.clean)return;
+  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#e8465a';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore();
+  if(sel){
+    const {w,h}=itemSize(sel);
+    ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);
+    ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5;ctx.strokeRect(-w/2,-h/2,w,h);ctx.restore();
+  }
+}
+
+function add(it){
+  const a=getArea();
+  Object.assign(it,{x:a.x+a.w/2,y:a.y+a.h/2,rot:0});
+  if(it.type==='shape'){it.size=Math.min(a.w,a.h)*.5;it.fill='#e8465a'}
+  items.push(it);sel=it;syncUI();draw();
+}
+$('addText').onclick=()=>{const t=$('txt').value.trim()||'Yazı';add({type:'text',text:t,size:40,fill:'#000000',font:'Arial'});$('txt').value=''};
+$('addImg').onclick=()=>$('file').click();
+$('file').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image();img.onload=()=>{const a=getArea();add({type:'image',img,s:Math.min(a.w/img.width,a.h/img.height)*.8})};
+  img.src=URL.createObjectURL(f);e.target.value='';
+};
+document.querySelectorAll('[data-shape]').forEach(b=>b.onclick=()=>add({type:'shape',shape:b.dataset.shape}));
+
+function syncUI(){
+  const P=PRODUCTS[product];$('sizeBox').style.display=P.sizes?'block':'none';
+  $('areaInfo').textContent='Baskı alanı: '+(P.sizes?P.sizes[sizeIdx]:P.fixed).n;
+  document.querySelectorAll('#products button').forEach(b=>b.classList.toggle('active',b.dataset.k===product));
+  document.querySelectorAll('.sw').forEach(b=>b.classList.toggle('active',b.dataset.c===color));
+  $('props').style.display=sel?'block':'none';$('none').style.display=sel?'none':'block';
+  if(!sel)return;
+  $('textProps').style.display=sel.type==='text'?'block':'none';
+  $('colorRow').style.display=sel.type==='image'?'none':'flex';
+  if(sel.type==='text'){$('pText').value=sel.text;$('pFont').value=sel.font}
+  if(sel.type!=='image')$('pColor').value=sel.fill;
+  $('pScale').value=sel.type==='text'?sel.size*2.5:sel.type==='image'?sel.s*100:sel.size/1.5;
+  $('pRot').value=sel.rot;
+}
+function refresh(){syncUI();draw()}
+$('pText').oninput=e=>{sel.text=e.target.value||' ';draw()};
+$('pFont').onchange=e=>{sel.font=e.target.value;draw()};
+$('pColor').oninput=e=>{sel.fill=e.target.value;draw()};
+$('pRot').oninput=e=>{sel.rot=+e.target.value;draw()};
+$('pScale').oninput=e=>{const v=+e.target.value;
+  if(sel.type==='text')sel.size=v/2.5;else if(sel.type==='image')sel.s=v/100;else sel.size=v*1.5;draw()};
+$('del').onclick=()=>{items=items.filter(i=>i!==sel);sel=null;refresh()};
+$('dup').onclick=()=>{if(!sel)return;const c={...sel,x:sel.x+15,y:sel.y+15};items.push(c);sel=c;refresh()};
+$('front').onclick=()=>{if(!sel)return;items=items.filter(i=>i!==sel);items.push(sel);draw()};
+$('back').onclick=()=>{if(!sel)return;items=items.filter(i=>i!==sel);items.unshift(sel);draw()};
+$('clear').onclick=()=>{if(confirm('Tüm tasarım silinsin mi?')){items=[];sel=null;refresh()}};
+
+function download(designOnly){
+  const prev=sel;sel=null;
+  const a=getArea();let url;
+  if(designOnly){ // 300 DPI, gerçek cm boyutunda
+    const k=300/2.54/PRODUCTS[product].s;
+    const o=el('canvas',{width:Math.round(a.cm.w/2.54*300),height:Math.round(a.cm.h/2.54*300)});
+    const main=ctx;ctx=o.getContext('2d');ctx.scale(k,k);ctx.translate(-a.x,-a.y);
+    items.forEach(drawItem);ctx=main;url=o.toDataURL('image/png');
+  }else{draw({clean:true});url=cv.toDataURL('image/png')}
+  el('a',{href:url,download:`tasarim-${product}${designOnly?'-baski-300dpi':''}.png`}).click();
+  sel=prev;draw();
+}
+$('save').onclick=()=>download(false);
+$('saveDesign').onclick=()=>download(true);
+
+// sürükleme
+function pos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*600/r.width,y:(e.clientY-r.top)*600/r.height}}
+function hit(it,p){
+  const {w,h}=itemSize(it),a=-it.rot*Math.PI/180,dx=p.x-it.x,dy=p.y-it.y;
+  const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);
+  return Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2;
+}
+let drag=null;
+cv.onpointerdown=e=>{
+  const p=pos(e);sel=[...items].reverse().find(i=>hit(i,p))||null;
+  if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};
+  cv.setPointerCapture(e.pointerId);syncUI();draw();
+};
+cv.onpointermove=e=>{if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;draw()};
+cv.onpointerup=()=>drag=null;
+window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName))$('del').click()};
+
+fillSizes();refresh();
+</script>
+</body>
+</html>
