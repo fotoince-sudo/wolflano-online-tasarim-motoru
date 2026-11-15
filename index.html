@@ -435,19 +435,21 @@ function drawDesign(p,v){
 }
 
 // c: hedef canvas. o.ui=true → kılavuzlar/seçim çizilir
+const HOFF=12;let snapV=false,snapH=false;
+const uPx=()=>W/cv.getBoundingClientRect().width;
 function render(c,o={}){
   const p=o.p||product,v=o.v||view,prev=ctx;ctx=c.getContext('2d');ctx.setTransform(c.width/W,0,0,c.width/W,0,0);
   drawWall();drawProduct(p,v,color);drawDesign(p,v);
   if(o.ui){
     drawGuides();
     if(showArea){const a=getArea(p,v);ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore()}
-    if(sel){const {w,h}=itemSize(sel);ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=2;ctx.strokeRect(-w/2,-h/2,w,h);
-      const dot=(x,y)=>{ctx.beginPath();ctx.arc(x,y,22,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke()};
-      // sağ alt: döndür
-      dot(w/2,h/2);ctx.beginPath();ctx.arc(w/2,h/2,6.5,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(w/2+4.5,h/2-8);ctx.lineTo(w/2+8.5,h/2-3);ctx.lineTo(w/2+2.5,h/2-2.5);ctx.fillStyle='#2f6fed';ctx.fill();
-      // sağ üst: küçült/büyüt
-      const X=w/2,Y=-h/2;dot(X,Y);ctx.beginPath();ctx.moveTo(X-6,Y+6);ctx.lineTo(X+6,Y-6);ctx.moveTo(X+1,Y-6);ctx.lineTo(X+6,Y-6);ctx.lineTo(X+6,Y-1);ctx.moveTo(X-1,Y+6);ctx.lineTo(X-6,Y+6);ctx.lineTo(X-6,Y+1);ctx.stroke();
-      ctx.restore()}
+    if(sel){const {w,h}=itemSize(sel),u=uPx();ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5*u;ctx.strokeRect(-w/2,-h/2,w,h);
+      const dot=(x,y,fn)=>{ctx.save();ctx.translate(x,y);ctx.scale(u,u);ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();fn();ctx.restore()};
+      dot(w/2+HOFF*u,h/2+HOFF*u,()=>{ctx.beginPath();ctx.arc(0,0,7,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(4.5,-8);ctx.lineTo(9,-3);ctx.lineTo(2.5,-2.5);ctx.fillStyle='#2f6fed';ctx.fill()});
+      dot(w/2+HOFF*u,-h/2-HOFF*u,()=>{ctx.beginPath();ctx.moveTo(-6,6);ctx.lineTo(6,-6);ctx.moveTo(1,-6);ctx.lineTo(6,-6);ctx.lineTo(6,-1);ctx.moveTo(-1,6);ctx.lineTo(-6,6);ctx.lineTo(-6,1);ctx.stroke()});
+      ctx.restore();
+      if(snapV||snapH){const A=getArea(p,v);ctx.save();ctx.strokeStyle='#ff3da0';ctx.lineWidth=1.5*u;ctx.beginPath();if(snapV){ctx.moveTo(A.x+A.w/2,A.y-20);ctx.lineTo(A.x+A.w/2,A.y+A.h+20)}if(snapH){ctx.moveTo(A.x-20,A.y+A.h/2);ctx.lineTo(A.x+A.w+20,A.y+A.h/2)}ctx.stroke();ctx.restore()}
+    }
   }
   ctx=prev;
 }
@@ -528,30 +530,34 @@ $('back').onclick=()=>{if(!sel)return;const a=cur();a.unshift(a.splice(a.indexOf
 
 // ---- sürükleme
 function pos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*W/r.height}}
-function hit(it,p){
+function hit(it,p,pad=0){
   const {w,h}=itemSize(it),a=-it.rot*Math.PI/180,dx=p.x-it.x,dy=p.y-it.y;
-  const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);return Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2;
+  const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);return Math.abs(lx)<=w/2+pad&&Math.abs(ly)<=h/2+pad;
 }
 let drag=null,moved=false;
 function handleHit(p){
-  if(!sel)return null;const {w,h}=itemSize(sel),a=sel.rot*Math.PI/180,c=Math.cos(a),n=Math.sin(a);
-  const at=(x,y)=>({x:sel.x+x*c-y*n,y:sel.y+x*n+y*c}),near=q=>Math.hypot(p.x-q.x,p.y-q.y)<=34;
-  if(near(at(w/2,h/2)))return'rot';if(near(at(w/2,-h/2)))return'scale';return null;
+  if(!sel)return null;const {w,h}=itemSize(sel),a=sel.rot*Math.PI/180,c=Math.cos(a),n=Math.sin(a),u=uPx(),o=HOFF*u;
+  const at=(x,y)=>({x:sel.x+x*c-y*n,y:sel.y+x*n+y*c}),near=q=>Math.hypot(p.x-q.x,p.y-q.y)<=26*u;
+  if(near(at(w/2+o,h/2+o)))return'rot';if(near(at(w/2+o,-h/2-o)))return'scale';return null;
 }
 cv.onpointerdown=e=>{
   const p=pos(e);
   const hh=handleHit(p);
   if(hh){drag={[hh]:true,d0:Math.hypot(p.x-sel.x,p.y-sel.y)||1,cm0:toCm(sel)};moved=false;cv.setPointerCapture(e.pointerId);return}
-  sel=[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
+  sel=(sel&&hit(sel,p,14*uPx())?sel:null)||[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
   if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};cv.setPointerCapture(e.pointerId);syncSel();draw();
 };
 cv.onpointermove=e=>{
   if(drag&&drag.scale&&sel){const p=pos(e),k=Math.hypot(p.x-sel.x,p.y-sel.y)/drag.d0;fromCm(sel,Math.max(1,Math.min(60,drag.cm0*k)));$('pScale').value=toCm(sel);$('sizeLbl').textContent=Math.round(toCm(sel)*2)/2+' cm';moved=true;draw();return}
   if(drag&&drag.rot&&sel){const p=pos(e),{w,h}=itemSize(sel);let d=(Math.atan2(p.y-sel.y,p.x-sel.x)-Math.atan2(h,w))*180/Math.PI;d=((d+540)%360)-180;
-    for(const k of [-180,-90,0,90,180])if(Math.abs(d-k)<4)d=k;
+    for(const k of [-180,-135,-90,-45,0,45,90,135,180])if(Math.abs(d-k)<4)d=k;
     sel.rot=Math.round(d);$('pRot').value=sel.rot;moved=true;draw();return}
-  if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;moved=true;draw()};
-cv.onpointerup=()=>{if(drag&&moved)commit();drag=null};
+  if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;moved=true;
+  const A=getArea(),t=9*uPx(),was=snapV||snapH;snapV=Math.abs(sel.x-(A.x+A.w/2))<t;snapH=Math.abs(sel.y-(A.y+A.h/2))<t;
+  if(snapV)sel.x=A.x+A.w/2;if(snapH)sel.y=A.y+A.h/2;
+  if((snapV||snapH)&&!was&&navigator.vibrate)try{navigator.vibrate(8)}catch(_){}
+  draw()};
+cv.onpointerup=()=>{if(drag&&moved)commit();drag=null;if(snapV||snapH){snapV=snapH=false;draw()}};
 window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))$('del').click()};
 
 // ---- sağ panel
