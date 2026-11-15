@@ -11,10 +11,21 @@ html{-webkit-text-size-adjust:100%}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f5f9;color:var(--tx)}
 button,select,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-.top{display:flex;align-items:center;gap:10px;background:#fff;padding:10px 18px;box-shadow:0 1px 6px #0001;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.top{background:#fff;padding:6px 16px 8px;box-shadow:0 1px 6px #0001;z-index:20}
 .logo{font-size:26px;font-weight:900;font-style:italic;letter-spacing:-.5px}
 .logo small{font-style:normal;font-weight:700;font-size:22px;color:var(--p);margin-left:10px}
-.sp{flex:1}
+.toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin-top:4px}
+.print-formats,.history,.order-actions{display:flex;align-items:center;gap:6px}
+.print-formats{grid-column:1}
+.print-formats[hidden]{display:none}
+.history{grid-column:2}
+.order-actions{grid-column:3;justify-content:flex-end}
+.format-button{display:grid;place-content:center;justify-items:center;gap:3px;min-width:48px;height:42px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-size:11px;font-weight:700;line-height:1}
+.format-button[aria-pressed=true]{border-color:var(--p);background:var(--pl);color:var(--p)}
+.format-glyph{display:block;width:11px;height:15px;border:1.5px solid currentColor;border-radius:2px}
+.format-glyph.landscape{width:15px;height:11px}
+.format-glyph.square{width:11px;height:11px}
+.history .ib{border:1px solid #d7d7e0;font-size:24px;line-height:1}
 .ib{width:42px;height:42px;border:0;border-radius:10px;background:#f0f0f5;font-size:20px}
 .ib:disabled{opacity:.4}
 .btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;font-size:15px}
@@ -84,8 +95,8 @@ dialog::backdrop{background:#000a}
 html,body{height:100%;margin:0}
 body{height:100dvh}
 body{display:flex;flex-direction:column;overflow:hidden}
-.top{position:static;padding:8px 16px;flex-wrap:nowrap}
 .ctx{display:flex;align-items:center;gap:12px;background:#fff;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);padding:6px 16px;min-height:52px;flex-wrap:wrap}
+.ctx[hidden]{display:none}
 .ctx select{width:auto;margin:0;padding:7px 9px}
 .bar .info{margin:0;padding:6px 10px;font-size:12px;gap:8px}
 .bar .info b{display:inline;margin:0 6px 0 0}
@@ -138,11 +149,9 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .bar .zoom{display:none}
   .logo{font-size:20px}.logo small{font-size:16px}
   .btn{padding:9px 12px;font-size:13px}.ib{width:36px;height:36px}
-  .top{padding:8px 10px;flex-wrap:wrap}
+  .top{padding:4px 8px 6px}
   html,body{overflow-x:hidden;max-width:100vw}
   .ctx{padding:6px 10px;display:block}
-  .ctx #printBox select{width:100%}
-  .ctx #sel{margin-top:8px}
   .selIn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .ctx #sel #selText{grid-column:1/-1;display:flex}
   .ctx #sel textarea{flex:1;width:auto;min-width:0}
@@ -155,9 +164,20 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .ctx #sel #selColor{grid-column:1/-1}
   .ctx #sel .sm{padding:8px 2px;font-size:13px}
 }
+@media(max-width:720px){
+  .print-formats,.history,.order-actions{gap:3px}
+  .format-button{min-width:29px;height:38px;font-size:10px}
+  .order-actions .btn{display:grid;place-items:center;width:38px;height:38px;padding:0;font-size:18px}
+  .order-actions .action-label{display:none}
+}
+@media(max-width:359px){
+  .format-button{min-width:26px}
+  .history .ib{width:33px}
+}
 @media(max-height:520px) and (min-width:801px){
   .stage .wrap{width:min(100%,calc(100vh - 220px))}
   .top{padding:3px 10px}.ib{width:32px;height:32px}.btn{padding:7px 10px}
+  .format-button{height:32px}
   .ctx{min-height:40px;padding:3px 10px}
   .tog{font-size:10px;padding:3px 7px;right:8px;bottom:8px}.tog input{width:28px;height:16px}
   .lbl{font-size:9px;left:10px;bottom:8px}
@@ -167,15 +187,20 @@ body{display:flex;flex-direction:column;overflow:hidden}
 <body>
 <header class="top">
   <div class="logo">🐺 WOLFLANO<small>Tasarla</small></div>
-  <span class="sp"></span>
-  <button class="ib" id="undo" title="Geri al">↶</button>
-  <button class="ib" id="redo" title="İleri al">↷</button>
-  <button class="btn pr" id="preview">👁 Ön İzleme</button>
-  <button class="btn or" id="cart">🛒 Sepete Ekle</button>
+  <div class="toolbar">
+    <div id="printFormats" class="print-formats" role="group" aria-label="Baskı boyutu"></div>
+    <div class="history" role="group" aria-label="Düzenleme geçmişi">
+      <button type="button" class="ib" id="undo" title="Geri al" aria-label="Geri al">↶</button>
+      <button type="button" class="ib" id="redo" title="İleri al" aria-label="İleri al">↷</button>
+    </div>
+    <div class="order-actions">
+      <button type="button" class="btn pr" id="preview" title="Ön İzleme" aria-label="Ön İzleme"><span aria-hidden="true">👁</span> <span class="action-label">Ön İzleme</span></button>
+      <button type="button" class="btn or" id="cart" title="Sepete Ekle" aria-label="Sepete Ekle"><span aria-hidden="true">🛒</span> <span class="action-label">Sepete Ekle</span></button>
+    </div>
+  </div>
 </header>
 
-<div class="ctx">
-  <div id="printBox"><div style="display:flex;align-items:center;gap:10px"><select id="sizeSel" title="Baskı Boyutu"></select></div></div>
+<div class="ctx" id="context" hidden>
   <div class="info" id="info" style="display:none"></div>
   <div class="sel" id="sel"><div class="selIn">
         <h4>Seçili öğe</h4>
@@ -293,20 +318,20 @@ const OLCU_UZUN=mk([27,28,29,30,31,32,33,34],[33,34,35,36,37,38,39,40]);        
 const OLCU={tisort:OLCU_TISORT,sweat:OLCU_UZUN,hoodie:OLCU_UZUN};
 const BEDEN=OLCU_TISORT;
 const GIYIM_BASKI=[
-  {n:'Logo 8×8 cm (sol göğüs)',w:8,h:8,logo:true},
-  {n:'A4 dikey 21×29,7 cm',w:21,h:29.7},
-  {n:'A4 yatay 29,7×21 cm',w:29.7,h:21},
-  {n:'A3 dikey 29,7×42 cm',w:29.7,h:42}
+  {n:'A4 dikey 21×29,7 cm',short:'A4',w:21,h:29.7},
+  {n:'A4 yatay 29,7×21 cm',short:'A4',w:29.7,h:21},
+  {n:'A3 dikey 29,7×42 cm',short:'A3',w:29.7,h:42},
+  {n:'Logo 8×8 cm (sol göğüs)',short:'8×8',w:8,h:8,logo:true}
 ];
 const PRODUCTS={
-  tisort:{name:'Tişört',kind:'giyim',sizes:GIYIM_BASKI,def:1,tz:1,zoom:100},
-  sweat:{name:'Sweatshirt',kind:'giyim',sizes:GIYIM_BASKI,def:1,tz:1,zoom:100},
-  hoodie:{name:'Hoodie',kind:'giyim',sizes:GIYIM_BASKI,def:1,tz:1,zoom:100},
+  tisort:{name:'Tişört',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
+  sweat:{name:'Sweatshirt',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
+  hoodie:{name:'Hoodie',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
   sapka:{name:'Şapka',kind:'sapka',sizes:[{n:'Şapka 20×8 cm',w:20,h:8}],def:0,tz:2.6,zoom:250},
   kupa:{name:'Kupa',kind:'kupa',sizes:[{n:'Kupa 9×20 cm (açık baskı)',w:20,h:9}],def:0,tz:2.4,zoom:250},
   kanvas:{name:'Kanvas',kind:'kanvas',def:0,tz:1.1,zoom:100,bleed:3.75,sizes:[
-    {n:'Kanvas dikey 35×50 cm (+3,75 cm katlama payı)',w:42.5,h:57.5},
-    {n:'Kanvas yatay 50×35 cm (+3,75 cm katlama payı)',w:57.5,h:42.5}]}
+    {n:'Kanvas dikey 35×50 cm (+3,75 cm katlama payı)',short:'35×50',w:42.5,h:57.5},
+    {n:'Kanvas yatay 50×35 cm (+3,75 cm katlama payı)',short:'50×35',w:57.5,h:42.5}]}
 };
 const COLORS=[['Beyaz','#ffffff'],['Siyah','#1a1a1a'],['Lacivert','#1f2a44'],['Gri','#a8a8a8'],['Bej','#e3d9c0'],['Yeşil','#4b6b22']];
 const VIEWS=[['on','Ön'],['arka','Arka'],['solyan','Sol Yan'],['sagyan','Sağ Yan'],['yaka','Yaka Detayı']];
@@ -622,11 +647,12 @@ function reflow(fn){ // beden/baskı boyutu değişince öğeleri baskı alanıy
     const dx=n.x+n.w/2-o.x-o.w/2,dy=n.y+n.h/2-o.y-o.h/2;designs[k].forEach(i=>{i.x+=dx;i.y+=dy})});
 }
 function buildStatic(){
+  buildPrintFormats();
   Object.entries(PRODUCTS).forEach(([k,P])=>{
     const b=el('button',{title:P.name},$('prods'));b.dataset.k=k;const c=el('canvas',{width:120,height:120},b);b.append(P.name);
     b.onclick=()=>{
-      product=k;view='on';sel=null;const sz=sizeIdx[k];zoom=P.zoom;
-      syncUI();draw();setZoom(zoom,true);
+      product=k;view='on';sel=null;zoom=P.zoom;
+      buildPrintFormats();syncUI();draw();setZoom(zoom,true);
     };
   });
   COLORS.forEach(([n,c])=>{const b=el('button',{title:n},$('cols'));b.style.background=c;b.dataset.c=c;
@@ -635,9 +661,27 @@ function buildStatic(){
     b.onclick=()=>{reflow(()=>beden=s);syncUI();draw()}});
   [['on','Ön'],['arka','Arka']].forEach(([v,n])=>{const b=el('button',{},$('views'));b.dataset.v=v;el('canvas',{width:200,height:200},b);b.append(n);
     b.onclick=()=>{view=v;sel=null;syncUI();draw()}});
-  $('sizeSel').onchange=e=>{reflow(()=>sizeIdx[product]=+e.target.value);syncUI();draw()};
+}
+function buildPrintFormats(){
+  const group=$('printFormats'),sizes=PRODUCTS[product].sizes;
+  group.replaceChildren();
+  group.hidden=sizes.length<2;
+  if(group.hidden)return;
+  sizes.forEach(({n,short,w,h},index)=>{
+    const button=el('button',{type:'button',className:'format-button',title:n},group);
+    button.setAttribute('aria-label',n);
+    const orientation=w===h?'square':w>h?'landscape':'portrait';
+    const glyph=el('span',{className:'format-glyph '+orientation},button);
+    glyph.setAttribute('aria-hidden','true');
+    el('span',{textContent:short},button);
+    button.onclick=()=>{
+      if(index===sizeIdx[product])return;
+      reflow(()=>sizeIdx[product]=index);syncUI();draw();
+    };
+  });
 }
 function syncSel(){
+  $('context').hidden=!sel;
   $('sel').style.display=sel?'block':'none';if(!sel)return;
   $('selText').style.display=sel.type==='text'?'flex':'none';
   $('selColor').style.display=sel.type==='image'?'none':'flex';
@@ -651,8 +695,7 @@ function syncUI(){
   document.querySelectorAll('#cols button').forEach(b=>b.classList.toggle('on',b.dataset.c===color));
   document.querySelectorAll('#bedens button').forEach(b=>b.classList.toggle('on',b.dataset.b===beden));
   $('bedenBox').style.display=g?'block':'none';$('views').style.display=g?'flex':'none';
-  const two=P.sizes.length>1;$('printBox').style.display=two?'block':'none';
-  $('sizeSel').innerHTML='';P.sizes.forEach((o,i)=>el('option',{value:i,textContent:o.n},$('sizeSel')));$('sizeSel').value=sizeIdx[product];
+  [...$('printFormats').children].forEach((button,index)=>button.setAttribute('aria-pressed',String(index===sizeIdx[product])));
   const [e,b]=OLCU[isGiyim()?product:'tisort'][beden],cm=curSize(),f1=x=>(Math.round(x*10)/10).toString().replace('.',','),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
   let info;
   if(g)info=`${tee}<div><b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${f1(e)} cm</span><span>Boy: ${f1(b)} cm</span></div>`;
