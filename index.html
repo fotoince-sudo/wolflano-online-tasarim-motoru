@@ -147,6 +147,36 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .bar .zoom{margin-left:auto}
 .bar .zoom input{width:160px;flex:none}
 .bar .zoom .ib{width:34px;height:34px;font-size:14px}
+.product-mode>.top,.product-mode>.ctx,.product-mode>.app{display:none}
+.product-page{flex:1;min-height:0;overflow:auto;background:#f5f4fa;padding:clamp(14px,4vw,44px)}
+.product-shell{max-width:960px;margin:0 auto}
+.product-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.product-header h1{font-size:clamp(22px,4vw,34px);margin:0}
+.product-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:20px;align-items:start}
+.product-model,.product-form{padding:clamp(12px,2vw,20px);border:1px solid var(--bd);border-radius:14px;background:#fff}
+.product-model h2{margin:0 0 10px;font-size:20px}
+.product-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.product-views figure{margin:0}
+.product-views canvas{display:block;width:100%;height:auto;border-radius:8px}
+.product-views figcaption{text-align:center;margin-top:5px;font-size:13px;font-weight:700}
+.product-measure{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;font-size:13px;color:var(--mut)}
+.product-measure strong{color:var(--tx)}
+.product-form fieldset{padding:0;margin:0 0 14px;border:0;min-width:0}
+.product-form legend,.product-print-label{font-weight:700;margin-bottom:6px}
+.product-print-label{display:block}
+.product-choices{display:flex;flex-wrap:wrap;gap:6px}
+.product-choices label{position:relative;cursor:pointer}
+.product-choices input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.product-choices label span{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;min-height:36px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
+.product-choices input:checked+span{border-color:var(--p);background:var(--pl);color:var(--p)}
+.product-choices input:focus-visible+span{outline:2px solid var(--p);outline-offset:2px}
+.product-color{width:15px;height:15px;border:1px solid #1d1d2b42;border-radius:50%}
+.product-form .btn{width:100%;margin-top:4px}
+@media(max-width:700px){
+  .product-layout{grid-template-columns:minmax(0,1fr);gap:10px}
+  .product-header{margin-bottom:10px}
+  .product-form fieldset{margin-bottom:10px}
+}
 @media(max-width:800px){
   body{overflow:auto;display:block;height:auto}
   .app{display:block}
@@ -331,6 +361,32 @@ body{display:flex;flex-direction:column;overflow:hidden}
   </section>
 </div>
 
+<main class="product-page" id="productPage" hidden>
+  <div class="product-shell">
+    <div class="product-header">
+      <h1 id="productTitle" tabindex="-1">Ürün Seç</h1>
+      <button type="button" class="sm" id="productBack">Stüdyoya dön</button>
+    </div>
+    <div class="product-layout">
+      <section class="product-model" aria-labelledby="productModelTitle">
+        <h2 id="productModelTitle">Tişört</h2>
+        <div class="product-views">
+          <figure><canvas id="shirtFront" width="480" height="480" aria-label="Tişörtün ön yüzü"></canvas><figcaption>Ön</figcaption></figure>
+          <figure><canvas id="shirtBack" width="480" height="480" aria-label="Tişörtün arka yüzü"></canvas><figcaption>Arka</figcaption></figure>
+        </div>
+        <p class="product-measure" id="productMeasurements" aria-live="polite"></p>
+      </section>
+      <form class="product-form" id="productForm">
+        <fieldset><legend>Renk</legend><div class="product-choices" id="productColors"></div></fieldset>
+        <fieldset><legend>Beden</legend><div class="product-choices" id="productSizes"></div></fieldset>
+        <label for="productPrint" class="product-print-label">Baskı alanı</label>
+        <select id="productPrint" name="format"></select>
+        <button type="submit" class="btn pr">Tasarlamaya başla</button>
+      </form>
+    </div>
+  </div>
+</main>
+
 <dialog id="dlg">
   <h3 style="margin-top:0">Ön İzleme</h3>
   <div class="pv" id="pv"></div>
@@ -395,12 +451,12 @@ const isGiyim=(p=product)=>PRODUCTS[p].kind==='giyim';
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,v+amt));return `rgb(${f(n>>16)},${f((n>>8)&255)},${f(n&255)})`}
 const curSize=(p=product)=>PRODUCTS[p].sizes[sizeIdx[p]];
-function dims(p=product){const [e,b,sl]=OLCU[p][beden];return{e,b,sl,E:e*S,B:b*S}}
+function dims(p=product,garmentSize=beden){const [e,b,sl]=OLCU[p][garmentSize];return{e,b,sl,E:e*S,B:b*S}}
 const NECK_FRONT=7.6, NECK_BACK=2; // yaka derinliği (cm)
-function getArea(p=product,v=view){
-  const cm=curSize(p),w=cm.w*S,h=cm.h*S;
+function getArea(p=product,v=view,garmentSize=beden,cm=curSize(p)){
+  const w=cm.w*S,h=cm.h*S;
   if(isGiyim(p)){
-    const {B}=dims(p),t=CY-B/2;
+    const {B}=dims(p,garmentSize),t=CY-B/2;
     // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 13 cm sağda (giyenin solu)
     const dx=cm.logo&&v==="on"?13*S:0;
     const top=t+(v==='on'?(NECK_FRONT+(cm.logo?8.9:6.4)):(NECK_BACK+5.1))*S;
@@ -411,8 +467,8 @@ function getArea(p=product,v=view){
 
 // ---- ürün çizimi (duvar koordinatlarında)
 function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
-function drawGarment(p,v,col){
-  const {e,b,sl,B}=dims(p),t=CY-B/2,front=v==='on',X=CX;
+function drawGarment(p,v,col,garmentSize=beden){
+  const {e,b,sl,B}=dims(p,garmentSize),t=CY-B/2,front=v==='on',X=CX;
   const nd=front?NECK_FRONT:NECK_BACK,hn=8.5+(e-45.7)*0.08,tipX=e/2+1,tipY=4,ay=p==='tisort'?0.33*b:0.32*b;
   const P=(x,y)=>[X+x*S,t+y*S],pt=(x,y)=>ctx.lineTo(...P(x,y)),mv=(x,y)=>ctx.moveTo(...P(x,y));
   const dist=Math.hypot(tipX,tipY),slv=Math.max(sl-dist,8),r=Math.PI/180;
@@ -496,6 +552,10 @@ function drawRuler(depth,reversed){
   }
   ctx.stroke();
 }
+function drawPrintArea({x,y,w,h}){
+  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;
+  ctx.strokeRect(x,y,w,h);ctx.restore();
+}
 
 // ---- öğeler
 function itemSize(it){
@@ -534,7 +594,7 @@ function render(c,o={}){
   drawWall();drawProduct(p,v,color);drawDesign(p,v);
   if(o.ui){
     drawGuides();
-    if(showArea){const a=getArea(p,v);ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore()}
+    if(showArea)drawPrintArea(getArea(p,v));
     if(sel){const {w,h}=itemSize(sel),u=uPx();ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5*u;ctx.strokeRect(-w/2,-h/2,w,h);
       const dot=(x,y,fn)=>{ctx.save();ctx.translate(x,y);ctx.scale(u,u);ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();fn();ctx.restore()};
       dot(w/2+HOFF*u,h/2+HOFF*u,()=>{ctx.beginPath();ctx.arc(0,0,7,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(4.5,-8);ctx.lineTo(9,-3);ctx.lineTo(2.5,-2.5);ctx.fillStyle='#2f6fed';ctx.fill()});
@@ -596,7 +656,7 @@ $('newText').onclick=()=>{
 };
 $('qaCol').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect(),c=$('colPop');c.style.top=Math.max(8,r.top)+'px';c.classList.toggle('open')};
 document.addEventListener('click',e=>{if(!$('colPop').contains(e.target))$('colPop').classList.remove('open')});
-$('qaProd').onclick=()=>{window.parent!==window&&parent.postMessage({type:'wolflano:urun-sec'},'*');dispatchEvent(new CustomEvent('wolflano:urun-sec'));toast('Ürün Seç sayfasına yönlendirilecek')};
+$('qaProd').onclick=()=>{location.hash='urun-sec'};
 $('file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;const img=new Image();
   img.onload=()=>{const a=getArea();add({type:'image',img,s:Math.min(a.w/img.width,a.h/img.height)*.8})};
@@ -700,11 +760,86 @@ cv.onpointercancel=cv.onpointerup=e=>{
 window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))deleteSelection()};
 
 // ---- sağ panel
-function reflow(fn){ // beden/baskı boyutu değişince öğeleri baskı alanıyla birlikte kaydır
-  const keys=Object.keys(designs).filter(k=>k.startsWith(product+'|')),old={};
-  keys.forEach(k=>old[k]=getArea(product,k.split('|')[1]));fn();
-  keys.forEach(k=>{const n=getArea(product,k.split('|')[1]),o=old[k];
-    const dx=n.x+n.w/2-o.x-o.w/2,dy=n.y+n.h/2-o.y-o.h/2;designs[k].forEach(i=>{i.x+=dx;i.y+=dy})});
+function reflow(fn,p=product){ // baskı alanı taşınırken tasarımların fiziksel boyutları korunur
+  const faces=isGiyim(p)?['on','arka']:['on'];
+  const previous=faces.map(v=>getArea(p,v));
+  fn();
+  const versions=[designs,...hist.map(s=>s.designs),...redoSt.map(s=>s.designs)];
+  faces.forEach((v,index)=>{
+    const next=getArea(p,v),old=previous[index];
+    const dx=next.x+next.w/2-old.x-old.w/2,dy=next.y+next.h/2-old.y-old.h/2;
+    if(!dx&&!dy)return;
+    versions.forEach(version=>(version[key(p,v)]||[]).forEach(item=>{item.x+=dx;item.y+=dy}));
+  });
+}
+const cmText=new Intl.NumberFormat('tr-TR',{maximumFractionDigits:1});
+const productForm=$('productForm');
+function productChoice(parent,name,value,label,swatch){
+  const row=el('label',{},parent);
+  el('input',{type:'radio',name,value,required:true},row);
+  const caption=el('span',{},row);
+  if(swatch){
+    const dot=el('i',{className:'product-color'},caption);
+    dot.style.background=swatch;
+  }
+  caption.append(label);
+}
+function productPreview(canvas,face,selectedColor,selectedSize,format){
+  const prev=ctx;
+  ctx=canvas.getContext('2d');
+  ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
+  ctx.fillStyle='#e6e6ef';
+  ctx.fillRect(0,0,W,W);
+  drawGarment('tisort',face,selectedColor,selectedSize);
+  drawPrintArea(getArea('tisort',face,selectedSize,format));
+  ctx=prev;
+}
+function syncProductPage(){
+  const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
+  const {e,b}=dims('tisort',shirtSize.value),format=GIYIM_BASKI[printFormat.value];
+  productPreview($('shirtFront'),'on',shirtColor.value,shirtSize.value,format);
+  productPreview($('shirtBack'),'arka',shirtColor.value,shirtSize.value,format);
+  $('productMeasurements').innerHTML=
+    `<span>Göğüs eni <strong>${cmText.format(e)} cm</strong></span>`+
+    `<span>Boy <strong>${cmText.format(b)} cm</strong></span>`+
+    `<span>Baskı <strong>${cmText.format(format.w)} × ${cmText.format(format.h)} cm</strong></span>`;
+}
+function routeProduct(){
+  const opening=location.hash==='#urun-sec',page=$('productPage');
+  if(opening===!page.hidden)return;
+  document.body.classList.toggle('product-mode',opening);
+  page.hidden=!opening;
+  if(opening){
+    setFly('');
+    productForm.elements.beden.value=beden;
+    productForm.elements.renk.value=color;
+    productForm.elements.format.value=sizeIdx.tisort;
+    syncProductPage();
+    $('productTitle').focus({preventScroll:true});
+  }else{
+    syncUI();draw();
+    $('qaProd').focus({preventScroll:true});
+  }
+  window.scrollTo(0,0);
+}
+function buildProductPage(){
+  COLORS.forEach(([name,hex])=>productChoice($('productColors'),'renk',hex,name,hex));
+  SIZES.forEach(size=>productChoice($('productSizes'),'beden',size,size));
+  GIYIM_BASKI.forEach(({n},index)=>el('option',{value:index,textContent:n},$('productPrint')));
+  productForm.onchange=syncProductPage;
+  productForm.onsubmit=event=>{
+    event.preventDefault();
+    const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
+    reflow(()=>{beden=shirtSize.value;sizeIdx.tisort=+printFormat.value},'tisort');
+    color=shirtColor.value;colorName=COLORS.find(([,hex])=>hex===color)[0];
+    if(product!=='tisort'){
+      product='tisort';view='on';buildPrintFormats();
+    }
+    sel=null;
+    location.hash='';
+  };
+  $('productBack').onclick=()=>{location.hash=''};
+  window.addEventListener('hashchange',routeProduct);
 }
 function buildStatic(){
   buildPrintFormats();
@@ -815,7 +950,7 @@ $('cart').onclick=()=>{
   toast('Sepete eklendi ✓');
 };
 
-buildStatic();commit();syncUI();draw();setZoom(100);
+buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProduct();
 window.addEventListener('resize',()=>{if(zoom>100)setZoom(zoom)});
 </script>
 </body>
