@@ -198,7 +198,14 @@ const cv=document.getElementById('c'); let ctx=cv.getContext('2d');
 const $=id=>document.getElementById(id);
 function el(t,p={},parent){const e=Object.assign(document.createElement(t),p);parent&&parent.append(e);return e}
 
-const BEDEN={S:[49,69],M:[52,71],L:[55,73],XL:[58,75],'2XL':[62,77],'3XL':[67,80],'4XL':[73,84],'5XL':[81,89]};
+// Gildan resmi ölçü tabloları (inç → cm): [göğüs eni, boy, merkez arka yakadan kol hizası]
+const IN=2.54, SIZES=['S','M','L','XL','2XL','3XL','4XL','5XL'];
+const CHEST=[18,20,22,24,26,28,30,32];
+function mk(len,slv){const o={};SIZES.forEach((s,i)=>o[s]=[CHEST[i]*IN,len[i]*IN,slv[i]*IN]);return o}
+const OLCU_TISORT=mk([28,29,30,31,32,33,34,35],[15.625,17,18.5,20,21.5,22.375,23.625,25]);   // Gildan 5000
+const OLCU_UZUN=mk([27,28,29,30,31,32,33,34],[33,34,35,36,37,38,39,40]);                    // Gildan 18500 (sweatshirt için de kullanıldı)
+const OLCU={tisort:OLCU_TISORT,sweat:OLCU_UZUN,hoodie:OLCU_UZUN};
+const BEDEN=OLCU_TISORT;
 const GIYIM_BASKI=[
   {n:'Logo 8×8 cm (sol göğüs)',w:8,h:8,logo:true},
   {n:'A4 dikey 21×29,7 cm',w:21,h:29.7},
@@ -238,13 +245,15 @@ const isGiyim=(p=product)=>PRODUCTS[p].kind==='giyim';
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,v+amt));return `rgb(${f(n>>16)},${f((n>>8)&255)},${f(n&255)})`}
 const curSize=(p=product)=>PRODUCTS[p].sizes[sizeIdx[p]];
-function dims(){const [e,b]=BEDEN[beden];return{E:e*S,B:b*S}}
+function dims(p=product){const [e,b,sl]=OLCU[p][beden];return{e,b,sl,E:e*S,B:b*S}}
+const NECK_FRONT=7.6, NECK_BACK=2; // yaka derinliği (cm)
 function getArea(p=product,v=view){
   const cm=curSize(p),w=cm.w*S,h=cm.h*S;
   if(isGiyim(p)){
-    const {E,B}=dims(),t=CY-B/2;
-    const dx=cm.logo&&v==='on'?0.15*E:0;      // sol göğüs: giyen kişinin solu = ekranda sağ
-    const top=t+(cm.logo?(v==='on'?14:10):9)*S;
+    const {B}=dims(p),t=CY-B/2;
+    // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 10 cm (4") sağda (giyenin solu)
+    const dx=cm.logo&&v==='on'?10*S:0;
+    const top=t+(v==='on'?(NECK_FRONT+(cm.logo?8.9:6.4)):(NECK_BACK+5.1))*S;
     return{x:CX+dx-w/2,y:top,w,h,cm};
   }
   return{x:CX-w/2,y:CY-h/2,w,h,cm};
@@ -253,32 +262,35 @@ function getArea(p=product,v=view){
 // ---- ürün çizimi (duvar koordinatlarında)
 function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
 function drawGarment(p,v,col){
-  const {E,B}=dims(),t=CY-B/2,b=CY+B/2,front=v==='on';
-  const nd=front?0.15*E:0.045*E, X=CX;
-  const L=(x,y)=>ctx.lineTo(X+x*E,t+y*B);
+  const {e,b,sl,B}=dims(p),t=CY-B/2,front=v==='on',X=CX;
+  const nd=front?NECK_FRONT:NECK_BACK,hn=8.5+(e-45.7)*0.08,tipX=e/2+1,tipY=4,ay=p==='tisort'?0.33*b:0.32*b;
+  const P=(x,y)=>[X+x*S,t+y*S],pt=(x,y)=>ctx.lineTo(...P(x,y)),mv=(x,y)=>ctx.moveTo(...P(x,y));
+  const dist=Math.hypot(tipX,tipY),slv=Math.max(sl-dist,8),r=Math.PI/180;
+  let out;                                    // kol ucu (dış nokta)
+  if(p==='tisort'){out=[tipX+slv*Math.cos(50*r),tipY+slv*Math.sin(50*r)]}
+  else{out=[tipX+slv*Math.cos(78*r),tipY+slv*Math.sin(78*r)]}
+  const cw=11,inn=[out[0]-cw*Math.sin(78*r),out[1]+cw*Math.cos(78*r)];
   if(p==='hoodie'){
-    ctx.beginPath();ctx.ellipse(X,t+(front?0:0.1*B),0.24*E,front?0.075*B:0.1*B,0,0,7);
+    ctx.beginPath();ctx.ellipse(...P(0,front?0:3),(hn+6)*S,(front?4:7)*S,0,0,7);
     ctx.fillStyle=shade(col,-14);ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.fill();ctx.stroke();
   }
-  ctx.beginPath();ctx.moveTo(X-.22*E,t);ctx.quadraticCurveTo(X,t+nd*2,X+.22*E,t);
-  if(p==='tisort'){
-    L(.52,.05);L(.64,.27);L(.50,.34);ctx.lineTo(X+.5*E,b);ctx.lineTo(X-.5*E,b);L(-.50,.34);L(-.64,.27);L(-.52,.05);
-  }else{
-    L(.52,.05);L(.70,.80);L(.58,.82);L(.50,.32);ctx.lineTo(X+.5*E,b);ctx.lineTo(X-.5*E,b);L(-.50,.32);L(-.58,.82);L(-.70,.80);L(-.52,.05);
-  }
-  ctx.closePath();fillStroke(col);
-  ctx.strokeStyle=shade(col,-22);ctx.lineWidth=p==='hoodie'?4:7;
-  ctx.beginPath();ctx.moveTo(X-.22*E,t);ctx.quadraticCurveTo(X,t+nd*2,X+.22*E,t);ctx.stroke();
-  if(p!=='tisort'){ // bel ve manşet lastikleri
+  const neck=()=>{mv(-hn,0);ctx.quadraticCurveTo(...P(0,nd*2),...P(hn,0))};
+  ctx.beginPath();neck();pt(tipX,tipY);pt(out[0],out[1]);
+  if(p==='tisort'){pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-out[0],out[1])}
+  else{pt(inn[0],inn[1]);pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-inn[0],inn[1]);pt(-out[0],out[1])}
+  pt(-tipX,tipY);ctx.closePath();fillStroke(col);
+  ctx.strokeStyle=shade(col,-22);ctx.lineWidth=p==='hoodie'?4:7;ctx.beginPath();neck();ctx.stroke(); // yaka bandı
+  if(p!=='tisort'){ // bel ve manşet lastikleri (6 cm)
     ctx.fillStyle=shade(col,-12);ctx.strokeStyle=shade(col,-55);ctx.lineWidth=1.5;
-    ctx.fillRect(X-.5*E,b-.07*B,E,.07*B);ctx.strokeRect(X-.5*E,b-.07*B,E,.07*B);
-    [-1,1].forEach(s=>{ctx.beginPath();ctx.moveTo(X+s*.70*E,t+.80*B);ctx.lineTo(X+s*.58*E,t+.82*B);ctx.lineTo(X+s*.585*E,t+.755*B);ctx.lineTo(X+s*.695*E,t+.735*B);ctx.closePath();ctx.fill();ctx.stroke()});
+    ctx.fillRect(X-e/2*S,t+(b-6)*S,e*S,6*S);ctx.strokeRect(X-e/2*S,t+(b-6)*S,e*S,6*S);
+    const ux=Math.cos(78*r)*6,uy=Math.sin(78*r)*6;
+    [-1,1].forEach(sg=>{ctx.beginPath();mv(sg*out[0],out[1]);pt(sg*inn[0],inn[1]);pt(sg*inn[0]-sg*ux,inn[1]-uy);pt(sg*out[0]-sg*ux,out[1]-uy);ctx.closePath();ctx.fill();ctx.stroke()});
   }
   if(p==='hoodie'&&front){
     ctx.strokeStyle=shade(col,-45);ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(X-.3*E,t+.64*B);ctx.lineTo(X+.3*E,t+.64*B);ctx.lineTo(X+.34*E,b-.1*B);ctx.lineTo(X-.34*E,b-.1*B);ctx.closePath();ctx.stroke();
+    ctx.beginPath();mv(-.3*e,.64*b);pt(.3*e,.64*b);pt(.34*e,b-9);pt(-.34*e,b-9);ctx.closePath();ctx.stroke();
     ctx.strokeStyle=shade(col,col==='#ffffff'?-35:60);ctx.lineWidth=3;
-    [-1,1].forEach(s=>{ctx.beginPath();ctx.moveTo(X+s*.06*E,t+nd);ctx.lineTo(X+s*.07*E,t+nd+.14*B);ctx.stroke()});
+    [-1,1].forEach(sg=>{ctx.beginPath();mv(sg*3,nd);pt(sg*3.5,nd+12);ctx.stroke()});
   }
 }
 function drawCap(col){
@@ -458,7 +470,7 @@ function buildStatic(){
   });
   COLORS.forEach(([n,c])=>{const b=el('button',{title:n},$('cols'));b.style.background=c;b.dataset.c=c;
     b.onclick=()=>{color=c;colorName=n;syncUI();draw()}});
-  Object.keys(BEDEN).forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
+  SIZES.forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
     b.onclick=()=>{reflow(()=>beden=s);syncUI();draw()}});
   [['on','Ön'],['arka','Arka']].forEach(([v,n])=>{const b=el('button',{},$('views'));b.dataset.v=v;el('canvas',{width:200,height:200},b);b.append(n);
     b.onclick=()=>{view=v;sel=null;syncUI();draw()}});
@@ -480,9 +492,9 @@ function syncUI(){
   $('bedenBox').style.display=g?'block':'none';$('viewBox').style.display=g?'block':'none';
   const two=P.sizes.length>1;$('printBox').style.display=two?'block':'none';$('infoOnly').style.display=two?'none':'block';
   $('sizeSel').innerHTML='';P.sizes.forEach((o,i)=>el('option',{value:i,textContent:o.n},$('sizeSel')));$('sizeSel').value=sizeIdx[product];
-  const [e,b]=BEDEN[beden],cm=curSize(),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
+  const [e,b]=OLCU[isGiyim()?product:'tisort'][beden],cm=curSize(),f1=x=>(Math.round(x*10)/10).toString().replace('.',','),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
   let info;
-  if(g)info=`${tee}<div><b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${e} cm</span><span>Boy: ${b} cm</span></div>`;
+  if(g)info=`${tee}<div><b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${f1(e)} cm</span><span>Boy: ${f1(b)} cm</span></div>`;
   else if(P.kind==='kanvas')info=`<div><b>Kanvas Ölçüleri</b><span>Ön yüz: ${(cm.w-7.5).toString().replace('.',',')}×${(cm.h-7.5).toString().replace('.',',')} cm</span><span>Katlama payı: 3,75 cm</span></div>`;
   else info=`<div><b>${P.name} Ölçüleri</b><span>Baskı alanı: ${cm.w}×${cm.h} cm</span></div>`;
   $('info').innerHTML=info;$('info2').innerHTML=info;
