@@ -120,10 +120,18 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .app{flex:1;min-height:0;display:flex}
 .rail{width:80px;flex:none;background:#fff;border-right:1px solid var(--bd);overflow-y:auto;padding:8px 0}
 .nav{display:flex;flex-direction:column;gap:5px;align-items:center}
-.nav button{width:68px;border:0;background:none;border-radius:12px;padding:5px 2px;font-size:11px;color:var(--tx);display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.15}
-.nav button i{font-style:normal;width:46px;height:46px;display:grid;place-items:center;background:#f3f1fb;border-radius:12px;font-size:20px}
-.nav button.on{color:var(--p);font-weight:600}
-.nav button.on i{background:var(--p);color:#fff}
+.nav button{width:68px;border:0;background:none;border-radius:12px;padding:5px 2px;font-size:11px;font-weight:600;color:var(--tx);display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.15}
+.nav button i{font-style:normal;width:46px;height:46px;display:grid;place-items:center;background:var(--tool-tint,#f3f1fb);color:var(--tool-ink,var(--p));border-radius:12px}
+.nav button.on{color:var(--tool-ink,var(--p))}
+.nav button.on i{background:var(--tool-ink,var(--p));color:#fff}
+.tool-label{white-space:nowrap}
+#qaProd{--tool-tint:#e6f2ff;--tool-ink:#1c5eac}
+#qaCol{--tool-tint:#fce8f4;--tool-ink:#9e2967}
+.nav [data-t=text]{--tool-tint:#edeefe;--tool-ink:#4e46b0}
+.nav [data-t=image]{--tool-tint:#dff6ed;--tool-ink:#12704b}
+.nav [data-t=template]{--tool-tint:#f2e7ff;--tool-ink:#7134b1}
+.nav [data-t=qr]{--tool-tint:#e1f6fc;--tool-ink:#08657c}
+.nav [data-t=bg]{--tool-tint:#fff0df;--tool-ink:#a04b16}
 .nav .wolf-tool{flex-direction:row;justify-content:center;gap:7px;width:74px;font-weight:700}
 .nav .wolf-tool i,.nav .wolf-tool.on i{width:36px;background:#141316;color:#ffce47}
 .nav .wolf-tool svg{width:24px;height:24px;fill:currentColor;stroke:none;filter:drop-shadow(0 0 3px #ffbd3e99)}
@@ -150,8 +158,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
   #nav2{flex-direction:row;border-bottom:0;margin:0;padding:0;border-right:1px solid var(--bd);padding-right:4px}
   .nav{flex-direction:row;justify-content:flex-start;gap:5px;width:max-content}
   .colpop{left:50%;transform:translateX(-50%);top:auto!important;bottom:84px}
-  .nav button{flex:none;width:52px}
-  .nav button i{width:44px;height:44px;font-size:20px}
+  .nav button{flex:none;width:52px;padding-block:3px;gap:3px}
+  .nav button i{width:44px;height:42px}
   .nav .wolf-tool{width:70px}
   .nav .wolf-tool i{width:34px}
   .panel{position:fixed;left:0;right:0;bottom:76px;width:auto;max-height:46vh;z-index:29;border-right:0;border-top:1px solid var(--bd);box-shadow:0 -6px 20px #0002;border-radius:16px 16px 0 0}
@@ -176,7 +184,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
 @media(max-width:430px){
   .rail{gap:3px;padding-inline:4px}
   .nav{gap:4px}
-  .nav button{width:40px}
+  .nav button{width:40px;font-size:10px}
   .nav button i{width:38px;height:42px}
 }
 @media(max-width:960px){
@@ -245,16 +253,16 @@ body{display:flex;flex-direction:column;overflow:hidden}
 <div class="app">
   <aside class="rail">
     <div class="nav" id="nav2">
-      <button type="button" id="qaProd" title="Ürün Seç" aria-label="Ürün Seç"><i><svg viewBox="0 0 24 24"><path d="M8 3l-5 3 2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3c-.6 1.6-2 2.5-4 2.5S8.6 4.6 8 3z"/></svg></i></button>
-      <button type="button" id="qaCol" title="Renk Seç" aria-label="Renk Seç"><i><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c1.300 0 2-.9 2-2 0-1.500-1-1.700-1-3 0-1 .8-2 2-2h2.500A3.500 3.500 0 0021 10.500C21 6.300 17 3 12 3z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.500" cy="7" r="1"/></svg></i></button>
+      <button type="button" id="qaProd" title="Ürün Seç" aria-label="Ürün Seç"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 3l-5 3 2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3c-.6 1.6-2 2.5-4 2.5S8.6 4.6 8 3z"/></svg></i><span class="tool-label">Ürün</span></button>
+      <button type="button" id="qaCol" title="Renk Seç" aria-label="Renk Seç"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c1.300 0 2-.9 2-2 0-1.500-1-1.700-1-3 0-1 .8-2 2-2h2.500A3.500 3.500 0 0021 10.500C21 6.300 17 3 12 3z"/><circle cx="7.500" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="14.500" cy="7" r="1"/></svg></i><span class="tool-label">Renk</span></button>
     </div>
     <div class="nav" id="nav">
-        <button data-t="text" title="Metin Ekle" aria-label="Metin Ekle"><i>T</i></button>
-        <button data-t="image" title="Görsel Ekle" aria-label="Görsel Ekle"><i>🖼</i></button>
-        <button data-t="template" title="Şablon" aria-label="Şablon"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M10 9v12"/></svg></i></button>
+        <button type="button" data-t="text" title="Metin Ekle" aria-label="Metin Ekle"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7V4h14v3M12 4v16m-4 0h8"/></svg></i><span class="tool-label">Metin</span></button>
+        <button type="button" data-t="image" title="Görsel Ekle" aria-label="Görsel Ekle"><i aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m3 17 5-5 4 4 4-6 5 6"/></svg></i><span class="tool-label">Görsel</span></button>
+        <button type="button" data-t="template" title="Şablon" aria-label="Şablon"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h12a2 2 0 0 1 2 2v12"/><rect x="3" y="6" width="15" height="15" rx="2"/><path d="M6 10h9M6 14h3v4H6zm6 0h3m-3 4h3"/></svg></i><span class="tool-label">Şablon</span></button>
         <button type="button" class="wolf-tool" data-t="wolf" title="Wolf — Yapay zekâ" aria-label="Wolf yapay zekâ"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 2c.9 5 2.9 7 8 8-5.1 1-7.1 3-8 8-.9-5-2.9-7-8-8 5.1-1 7.1-3 8-8ZM19.5 13c.5 2.9 1.6 4 4.5 4.5-2.9.5-4 1.6-4.5 4.5-.5-2.9-1.6-4-4.5-4.5 2.9-.5 4-1.6 4.5-4.5Z"/></svg></i><span>Wolf</span></button>
-        <button data-t="qr" title="Qr Kod" aria-label="Qr Kod"><i>▦</i></button>
-        <button data-t="bg" title="Arka Plan" aria-label="Arka Plan"><i>▨</i></button>
+        <button type="button" data-t="qr" title="QR Kod" aria-label="QR Kod"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h6v6H3zm12 0h6v6h-6zM3 15h6v6H3z"/><path fill="currentColor" stroke="none" d="M5 5h2v2H5zm12 0h2v2h-2zM5 17h2v2H5zm6-4h3v3h-3zm5-2h2v4h-2zm3 4h2v4h-2zm-4 3h3v3h-3zm-4 1h2v2h-2z"/></svg></i><span class="tool-label">QR Kod</span></button>
+        <button type="button" data-t="bg" title="Zemin Rengi" aria-label="Zemin Rengi"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m2.5 8 9.5-5 9.5 5-9.5 5zM3 12l9 5 9-5M3 16l9 5 9-5"/><path d="m9 6.5 6 3"/></svg></i><span class="tool-label">Zemin</span></button>
       </div>
     <input type="file" id="file" accept="image/*" hidden>
   </aside>
@@ -290,7 +298,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <p class="hint">Yapay zekâ ile tasarım bu stüdyo sürümünde henüz bağlı değil.</p>
       </div>
       <div class="fly" id="f-qr">
-        <h4>Qr Kod</h4>
+        <h4>QR Kod</h4>
         <input type="text" id="qrText" placeholder="Bağlantı veya metin">
         <div class="r"><label>Renk</label><input type="color" id="qrColor" value="#000000"></div>
         <div class="r"><label><input type="checkbox" id="qrBg" checked> Beyaz zemin</label></div>
