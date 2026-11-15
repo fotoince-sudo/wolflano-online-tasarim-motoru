@@ -453,13 +453,14 @@ function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,
 const curSize=(p=product)=>PRODUCTS[p].sizes[sizeIdx[p]];
 function dims(p=product,garmentSize=beden){const [e,b,sl]=OLCU[p][garmentSize];return{e,b,sl,E:e*S,B:b*S}}
 const NECK_FRONT=7.6, NECK_BACK=2; // yaka derinliği (cm)
+const BACK_PRINT_FROM_NECK=8;
 function getArea(p=product,v=view,garmentSize=beden,cm=curSize(p)){
   const w=cm.w*S,h=cm.h*S;
   if(isGiyim(p)){
     const {B}=dims(p,garmentSize),t=CY-B/2;
     // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 13 cm sağda (giyenin solu)
     const dx=cm.logo&&v==="on"?13*S:0;
-    const top=t+(v==='on'?(NECK_FRONT+(cm.logo?8.9:6.4)):(NECK_BACK+5.1))*S;
+    const top=t+(v==='on'?(NECK_FRONT+(cm.logo?8.9:6.4)):(NECK_BACK+BACK_PRINT_FROM_NECK))*S;
     return{x:CX+dx-w/2,y:top,w,h,cm};
   }
   return{x:CX-w/2,y:CY-h/2,w,h,cm};
