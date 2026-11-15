@@ -434,13 +434,17 @@ function drawDesign(p,v){
 }
 
 // c: hedef canvas. o.ui=true → kılavuzlar/seçim çizilir
+const HANDLE=44;
 function render(c,o={}){
   const p=o.p||product,v=o.v||view,prev=ctx;ctx=c.getContext('2d');ctx.setTransform(c.width/W,0,0,c.width/W,0,0);
   drawWall();drawProduct(p,v,color);drawDesign(p,v);
   if(o.ui){
     drawGuides();
     if(showArea){const a=getArea(p,v);ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore()}
-    if(sel){const {w,h}=itemSize(sel);ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5;ctx.strokeRect(-w/2,-h/2,w,h);ctx.restore()}
+    if(sel){const {w,h}=itemSize(sel);ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5;ctx.strokeRect(-w/2,-h/2,w,h);
+      const hy=-h/2-HANDLE;ctx.beginPath();ctx.moveTo(0,-h/2);ctx.lineTo(0,hy);ctx.stroke();
+      ctx.beginPath();ctx.arc(0,hy,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.arc(0,hy,6.5,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(4.5,hy-8);ctx.lineTo(8.5,hy-3);ctx.lineTo(2.5,hy-2.5);ctx.fillStyle='#2f6fed';ctx.fill();ctx.restore()}
   }
   ctx=prev;
 }
@@ -526,11 +530,21 @@ function hit(it,p){
   const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);return Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2;
 }
 let drag=null,moved=false;
+function onHandle(p){
+  if(!sel)return false;const {h}=itemSize(sel),a=sel.rot*Math.PI/180,d=h/2+HANDLE;
+  return Math.hypot(p.x-(sel.x+Math.sin(a)*d),p.y-(sel.y-Math.cos(a)*d))<=26;
+}
 cv.onpointerdown=e=>{
-  const p=pos(e);sel=[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
+  const p=pos(e);
+  if(onHandle(p)){drag={rot:true};moved=false;cv.setPointerCapture(e.pointerId);return}
+  sel=[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
   if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};cv.setPointerCapture(e.pointerId);syncSel();draw();
 };
-cv.onpointermove=e=>{if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;moved=true;draw()};
+cv.onpointermove=e=>{
+  if(drag&&drag.rot&&sel){const p=pos(e);let d=Math.atan2(p.y-sel.y,p.x-sel.x)*180/Math.PI+90;d=((d+540)%360)-180;
+    for(const k of [-180,-90,0,90,180])if(Math.abs(d-k)<4)d=k;
+    sel.rot=Math.round(d);$('pRot').value=sel.rot;moved=true;draw();return}
+  if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;moved=true;draw()};
 cv.onpointerup=()=>{if(drag&&moved)commit();drag=null};
 window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))$('del').click()};
 
