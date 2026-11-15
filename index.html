@@ -24,7 +24,12 @@ button{cursor:pointer}
 .fly{display:none}
 .fly.on{display:block}
 .fly h4{margin:0 0 10px;font-size:17px}
-#f-template section+section{margin-top:12px}
+#f-template details{margin-top:6px;border:1px solid var(--bd);border-radius:9px}
+#f-template summary{padding:10px 12px;cursor:pointer;font-weight:600}
+#f-template summary::marker{color:var(--p)}
+#f-template details[open]>summary{background:var(--pl);border-radius:8px 8px 0 0}
+.template-options{display:grid;gap:10px;padding:10px}
+.template-options h5{margin:0 0 6px;font-size:13px}
 .sel{margin-top:12px;display:none}
 .sel h4{margin:0 0 8px}
 input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--bd);border-radius:9px;margin-bottom:8px;background:#fff}
@@ -35,8 +40,6 @@ input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--b
 .sm:hover{background:var(--pl)}
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .grid button{font-size:22px;padding:6px}
-.pre{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.pre button{font-size:13px;padding:8px}
 .app>*{min-width:0}
 .stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px;width:min(100%,calc(100vh - 140px));margin:0 auto}
 .vp{touch-action:none;overflow:auto;aspect-ratio:1;border-radius:10px}
@@ -214,18 +217,21 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <button class="btn pr" id="addText" style="width:100%">Ekle</button>
       </div>
       <div class="fly" id="f-template">
-        <section>
-          <h4>Hazır Tasarımlar</h4>
-          <div class="pre" id="presets"></div>
-        </section>
-        <section>
-          <h4>Şekiller</h4>
-          <div class="grid" id="shapes"></div>
-        </section>
-        <section>
-          <h4>Emojiler</h4>
-          <div class="grid" id="emojis"></div>
-        </section>
+        <h4>Hazır Tasarımlar</h4>
+        <div id="presets"></div>
+        <details>
+          <summary>Emoji ve Şekiller</summary>
+          <div class="template-options">
+            <div>
+              <h5>Emojiler</h5>
+              <div class="grid" id="emojis"></div>
+            </div>
+            <div>
+              <h5>Şekiller</h5>
+              <div class="grid" id="shapes"></div>
+            </div>
+          </div>
+        </details>
       </div>
       <div class="fly" id="f-qr">
         <h4>Qr Kod</h4>
@@ -518,12 +524,19 @@ $('file').onchange=e=>{
 };
 SHAPES.forEach(([k,t])=>el('button',{className:'sm',textContent:t,onclick:()=>{const a=getArea();add({type:'shape',shape:k,size:Math.min(a.w,a.h)*.5,fill:'#e8465a'})}},$('shapes')));
 EMOJIS.forEach(e=>el('button',{className:'sm',textContent:e,onclick:()=>{const a=getArea();add({type:'text',text:e,size:Math.min(a.w,a.h)*.4,fill:'#000',font:'Arial'})}},$('emojis')));
-PRESETS.forEach(pr=>el('button',{className:'sm',textContent:pr.n,onclick:()=>{
-  const a=getArea(),m=Math.min(a.w,a.h);
-  pr.items.forEach(d=>{const it={type:d.type,rot:0,x:a.x+a.w/2,y:a.y+a.h/2+(d.dy||0)*m,fill:d.fill||'#000000',font:d.font||'Arial',size:d.size*m};
-    if(d.type==='text')it.text=d.text;else it.shape=d.shape;cur().push(it);sel=it});
-  commit();syncUI();draw();
-}},$('presets')));
+PRESETS.forEach(pr=>{
+  const category=el('details',{},$('presets'));
+  el('summary',{textContent:pr.n},category);
+  const options=el('div',{className:'template-options'},category);
+  const button=el('button',{type:'button',className:'sm',textContent:'Şablonu ekle'},options);
+  button.setAttribute('aria-label',pr.n+' şablonunu ekle');
+  button.onclick=()=>{
+    const a=getArea(),m=Math.min(a.w,a.h);
+    pr.items.forEach(d=>{const it={type:d.type,rot:0,x:a.x+a.w/2,y:a.y+a.h/2+(d.dy||0)*m,fill:d.fill||'#000000',font:d.font||'Arial',size:d.size*m};
+      if(d.type==='text')it.text=d.text;else it.shape=d.shape;cur().push(it);sel=it});
+    commit();syncUI();draw();
+  };
+});
 $('addQr').onclick=()=>{
   const txt=$('qrText').value.trim();if(!txt){toast('Qr kod için bir bağlantı veya metin yazın');return}
   const q=qrcode(0,'M');q.addData(txt);q.make();const n=q.getModuleCount(),m=10,pad=$('qrBg').checked?2:0,sz=(n+pad*2)*m;
