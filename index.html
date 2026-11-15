@@ -6,6 +6,7 @@
 <title>Wolflano Tasarla</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
 :root{--p:#6a2cf5;--pl:#efe9ff;--o:#ff6a13;--bd:#e4e4ec;--tx:#1d1d2b;--mut:#6b6b80}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f5f9;color:var(--tx)}
 button,select,input,textarea{font:inherit;color:inherit}
@@ -40,8 +41,9 @@ input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--b
 .grid button{font-size:22px;padding:6px}
 .pre{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .pre button{font-size:13px;padding:8px}
-.stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px}
-.vp{overflow:auto;aspect-ratio:1;border-radius:10px;max-height:82vh;max-width:82vh;margin:auto}
+.app>*{min-width:0}
+.stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px;width:min(100%,calc(100vh - 140px));margin:0 auto}
+.vp{overflow:auto;aspect-ratio:1;border-radius:10px}
 canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .lbl{position:absolute;left:18px;bottom:16px;color:#fff;font-size:13px;line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
 .tog{position:absolute;right:16px;bottom:14px;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px #0003}
@@ -80,14 +82,33 @@ dialog::backdrop{background:#000a}
 .pv img{width:100%;border-radius:10px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1d2b;color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:50}
 .hint{font-size:12px;color:var(--mut)}
-@media(max-width:1050px){
+@media(min-width:701px) and (max-width:1050px){
+  .app{grid-template-columns:200px minmax(0,1fr) 290px;gap:10px;padding:10px}
+  .tools,.opts{position:sticky;top:64px;max-height:calc(100vh - 74px);overflow-y:auto}
+  .prods{grid-template-columns:repeat(3,1fr)}
+  .nav button{padding:8px;font-size:14px;gap:8px}.nav button i{width:30px;height:30px}
+  .logo{font-size:20px}.logo small{font-size:16px}
+  .btn{padding:9px 12px;font-size:13px}.ib{width:36px;height:36px}
+  .top{padding:6px 12px}
+  .thumbs{min-height:0}
+}
+@media(max-width:700px){
   .app{grid-template-columns:1fr;padding:10px}
   .stage{order:1}.tools{order:2}.opts{order:3}
+  .stage .wrap{width:100%}
   .nav{flex-direction:row;overflow-x:auto}
   .nav button{flex:0 0 auto}
   .logo{font-size:20px}.logo small{font-size:16px}
   .btn{padding:9px 12px;font-size:13px}.ib{width:36px;height:36px}
-  .top{padding:8px 10px}
+  .top{padding:8px 10px;position:static}
+  .thumbs{min-height:0}
+}
+@media(max-height:520px) and (min-width:701px){
+  .stage .wrap{width:min(100%,calc(100vh - 84px))}
+  .top{padding:3px 10px}.ib{width:32px;height:32px}.btn{padding:7px 10px}
+  .tog{font-size:10px;padding:3px 7px;right:8px;bottom:8px}.tog input{width:28px;height:16px}
+  .lbl{font-size:9px;left:10px;bottom:8px}
+  .tools,.opts{top:46px;max-height:calc(100vh - 54px)}
 }
 </style>
 </head>
