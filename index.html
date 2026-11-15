@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-:root{--p:#6a2cf5;--pl:#efe9ff;--o:#ff6a13;--bd:#e4e4ec;--tx:#1d1d2b;--mut:#6b6b80}
+:root{--p:#6a2cf5;--pl:#efe9ff;--bd:#e4e4ec;--tx:#1d1d2b;--mut:#6b6b80}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f5f9;color:var(--tx)}
 button,select,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -32,7 +32,8 @@ button{cursor:pointer}
 .ib:disabled{opacity:.4}
 .btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;font-size:15px}
 .btn.pr{background:var(--p);box-shadow:0 3px 10px #6a2cf555}
-.btn.or{background:var(--o);box-shadow:0 3px 10px #ff6a1355}
+#cart{background:#137a42;box-shadow:0 3px 10px #137a4255}
+#cart svg,#boardDelete svg{width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 6px #0001}
 .fly{display:none}
 .fly.on{display:block}
@@ -56,6 +57,9 @@ input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--b
 .stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px;width:min(100%,calc(100vh - 140px));margin:0 auto}
 .vp{touch-action:none;overflow:auto;aspect-ratio:1;border-radius:10px}
 canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
+#boardDelete{position:absolute;top:calc(5% + 10px);left:calc(5% + 10px);display:flex;align-items:center;gap:4px;min-height:40px;padding:0 9px;border:1px solid #b42334;border-radius:9px;background:#fff;color:#a8192b;font-size:13px;font-weight:700;box-shadow:0 1px 4px #0003}
+#boardDelete[hidden]{display:none}
+#boardDelete svg{width:16px;height:16px}
 .lbl{position:absolute;left:18px;bottom:16px;color:#fff;font-size:13px;line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
 .tog{position:absolute;right:16px;bottom:14px;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px #0003}
 .tog input{width:36px;height:20px;accent-color:var(--p)}
@@ -208,7 +212,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
     <div class="order-actions">
       <div class="views" id="views" role="group" aria-label="Baskı yüzü"></div>
       <button type="button" class="btn pr" id="preview" title="Ön İzleme" aria-label="Ön İzleme"><span aria-hidden="true">👁</span> <span class="action-label">Ön İzleme</span></button>
-      <button type="button" class="btn or" id="cart" title="Sepete Ekle" aria-label="Sepete Ekle"><span aria-hidden="true">🛒</span> <span class="action-label">Sepete Ekle</span></button>
+      <button type="button" class="btn" id="cart" title="Sepete Ekle" aria-label="Sepete Ekle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h3l2.5 12h11.4l2-8H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg> <span class="action-label">Sepete Ekle</span></button>
     </div>
   </div>
 </header>
@@ -289,6 +293,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
     <div class="canvasArea">
       <div class="wrap">
         <div class="vp" id="vp"><canvas id="c" width="1080" height="1080"></canvas></div>
+        <button type="button" id="boardDelete" aria-label="Seçili öğeyi sil" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>Sil</button>
         <div class="lbl">Tasarım Duvarı<br>120 x 120 cm (Sabit)</div>
         <label class="tog">Baskı Alanı Göster <input type="checkbox" id="showArea" checked></label>
       </div>
@@ -516,7 +521,10 @@ function render(c,o={}){
   }
   ctx=prev;
 }
-function draw(){render(cv,{ui:true})}
+function draw(){
+  render(cv,{ui:true});
+  $('boardDelete').hidden=!sel;
+}
 function thumb(c,p,v,col,bg){
   const prev=ctx;ctx=c.getContext('2d');const k=c.width/W*PRODUCTS[p].tz;
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=bg;ctx.fillRect(0,0,c.width,c.height);
@@ -605,7 +613,13 @@ $('pColor').oninput=e=>{sel.fill=e.target.value;draw()};
 $('pRot').oninput=e=>{sel.rot=+e.target.value;draw()};
 $('pScale').oninput=e=>{fromCm(sel,+e.target.value);$('sizeLbl').textContent=(+e.target.value)+' cm';draw()};
 ['pColor','pRot','pScale'].forEach(i=>$(i).onchange=()=>commit());
-$('del').onclick=()=>{cur().splice(cur().indexOf(sel),1);sel=null;commit();syncUI();draw()};
+function deleteSelection(){
+  if(!sel)return;
+  cur().splice(cur().indexOf(sel),1);
+  sel=null;commit();syncUI();draw();
+}
+$('del').onclick=deleteSelection;
+$('boardDelete').onclick=deleteSelection;
 $('dup').onclick=()=>{if(!sel)return;const c={...sel,x:sel.x+12,y:sel.y+12};cur().push(c);sel=c;commit();syncUI();draw()};
 $('front').onclick=()=>{if(!sel)return;const a=cur();a.push(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
 $('back').onclick=()=>{if(!sel)return;const a=cur();a.unshift(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
@@ -659,7 +673,7 @@ cv.onpointercancel=cv.onpointerup=e=>{
   if(ignore)return;
   if(drag&&moved)commit();drag=null;if(snapV||snapH){snapV=snapH=false;draw()}};
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
-window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))$('del').click()};
+window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))deleteSelection()};
 
 // ---- sağ panel
 function reflow(fn){ // beden/baskı boyutu değişince öğeleri baskı alanıyla birlikte kaydır
