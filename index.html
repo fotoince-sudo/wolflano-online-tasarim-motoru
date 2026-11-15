@@ -16,16 +16,18 @@ button{cursor:pointer}
 .logo small{font-style:normal;font-weight:700;font-size:22px;color:var(--p);margin-left:10px}
 .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin-top:4px}
 .print-formats,.history,.order-actions{display:flex;align-items:center;gap:6px}
-.print-formats{grid-column:1}
+.print-formats{grid-column:1;gap:10px}
 .print-formats[hidden]{display:none}
 .history{grid-column:2}
 .order-actions{grid-column:3;justify-content:flex-end}
 .format-button{display:grid;place-content:center;justify-items:center;gap:3px;min-width:48px;height:42px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-size:11px;font-weight:700;line-height:1}
 .format-button[aria-pressed=true]{border-color:var(--p);background:var(--pl);color:var(--p)}
-.format-glyph{display:block;width:11px;height:15px;border:1.5px solid currentColor;border-radius:2px}
-.format-glyph.landscape{width:15px;height:11px}
-.format-glyph.square{width:11px;height:11px}
-.history .ib{border:1px solid #d7d7e0;font-size:24px;line-height:1}
+.format-glyph{display:block;width:13px;height:18px;border:1.5px solid currentColor;border-radius:2px}
+.format-glyph.landscape{width:18px;height:13px}
+.format-glyph.square{width:13px;height:13px}
+.history .ib{display:grid;place-items:center;padding:0;border:1px solid #cfc4ef;background:var(--pl);color:var(--p)}
+.history .ib:disabled{opacity:1;border-color:#d7d7e0;background:#f0f0f5;color:#6b6b80;cursor:default}
+.history .ib svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round}
 .ib{width:42px;height:42px;border:0;border-radius:10px;background:#f0f0f5;font-size:20px}
 .ib:disabled{opacity:.4}
 .btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;font-size:15px}
@@ -68,7 +70,7 @@ canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .prods{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .prods button{border:2px solid var(--bd);background:#fff;border-radius:10px;padding:3px 2px;font-size:11px}
 .prods button canvas{width:100%;height:auto;display:block;border-radius:6px;background:#e7e7ee}
-.prods button.on,.views button.on{border-color:var(--p);box-shadow:0 0 0 2px var(--p) inset}
+.prods button.on{border-color:var(--p);box-shadow:0 0 0 2px var(--p) inset}
 .cols{display:flex;gap:12px;flex-wrap:wrap}
 .cols button{width:42px;height:42px;border-radius:50%;border:2px solid #cfcfe0;padding:0}
 .cols button.on{outline:3px solid var(--p);outline-offset:2px}
@@ -78,9 +80,11 @@ canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .info{display:flex;gap:14px;align-items:center;background:var(--pl);border-radius:10px;padding:12px;margin-top:10px;font-size:15px}
 .info b{display:block;margin-bottom:3px}
 .info span{margin-right:14px}
-.views{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.views button{border:2px solid var(--bd);background:#fff;border-radius:10px;padding:4px;font-size:13px}
-.views canvas{width:100%;height:auto;display:block;border-radius:6px;background:#8d8d8d}
+.views{display:flex;gap:4px}
+.views[hidden]{display:none}
+.views button{display:flex;align-items:center;justify-content:center;gap:4px;height:42px;border:1px solid var(--bd);background:#fff;border-radius:8px;padding:0 7px;font-size:12px;font-weight:700;white-space:nowrap}
+.views button[aria-pressed=true]{border-color:var(--p);background:var(--pl);color:var(--p)}
+.views canvas{width:21px;height:21px;display:block;border-radius:4px}
 .zoom{display:flex;align-items:center;gap:10px}
 .zoom input{flex:1;accent-color:var(--p)}
 .zoom .ib{width:38px;height:38px;font-size:17px;background:#fff;border:1px solid var(--bd)}
@@ -126,8 +130,6 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .canvasArea{flex:1;min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;align-items:center}
 .stage .wrap{width:min(100%,calc(100vh - 270px));min-width:260px;margin:0 auto;flex:none}
 .bar{display:flex;align-items:center;gap:14px;background:#fff;border-top:1px solid var(--bd);padding:8px 16px;flex-wrap:wrap}
-.bar .views{display:flex;gap:8px}
-.bar .views button{width:62px;padding:3px;font-size:11px}
 .bar .zoom{margin-left:auto}
 .bar .zoom input{width:160px;flex:none}
 .bar .zoom .ib{width:34px;height:34px;font-size:14px}
@@ -164,20 +166,32 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .ctx #sel #selColor{grid-column:1/-1}
   .ctx #sel .sm{padding:8px 2px;font-size:13px}
 }
-@media(max-width:720px){
-  .print-formats,.history,.order-actions{gap:3px}
-  .format-button{min-width:29px;height:38px;font-size:10px}
-  .order-actions .btn{display:grid;place-items:center;width:38px;height:38px;padding:0;font-size:18px}
+@media(max-width:960px){
+  .order-actions .btn{display:grid;place-items:center;width:36px;height:38px;padding:0;font-size:18px}
   .order-actions .action-label{display:none}
 }
+@media(max-width:720px){
+  .print-formats{gap:6px}
+  .history,.order-actions,.views{gap:3px}
+  .format-button{min-width:31px;height:40px;font-size:10px}
+  .views button{min-width:28px;height:38px;padding:0 2px;font-size:11px}
+  .views canvas{display:none}
+}
+@media(max-width:389px){
+  .toolbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr);row-gap:4px}
+  .print-formats,.order-actions{grid-row:1}
+  .order-actions{grid-column:2}
+  .history{grid-area:2/1/3/3;justify-self:center}
+}
 @media(max-width:359px){
-  .format-button{min-width:26px}
+  .print-formats{gap:5px}
+  .format-button{min-width:29px}
   .history .ib{width:33px}
 }
 @media(max-height:520px) and (min-width:801px){
   .stage .wrap{width:min(100%,calc(100vh - 220px))}
   .top{padding:3px 10px}.ib{width:32px;height:32px}.btn{padding:7px 10px}
-  .format-button{height:32px}
+  .format-button,.views button{height:32px}
   .ctx{min-height:40px;padding:3px 10px}
   .tog{font-size:10px;padding:3px 7px;right:8px;bottom:8px}.tog input{width:28px;height:16px}
   .lbl{font-size:9px;left:10px;bottom:8px}
@@ -190,10 +204,11 @@ body{display:flex;flex-direction:column;overflow:hidden}
   <div class="toolbar">
     <div id="printFormats" class="print-formats" role="group" aria-label="Baskı boyutu"></div>
     <div class="history" role="group" aria-label="Düzenleme geçmişi">
-      <button type="button" class="ib" id="undo" title="Geri al" aria-label="Geri al">↶</button>
-      <button type="button" class="ib" id="redo" title="İleri al" aria-label="İleri al">↷</button>
+      <button type="button" class="ib" id="undo" title="Geri al" aria-label="Geri al"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5 3 10l5 5M3 10h11a6 6 0 0 1 6 6v3"/></svg></button>
+      <button type="button" class="ib" id="redo" title="İleri al" aria-label="İleri al"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 5 5 5-5 5m5-5H10a6 6 0 0 0-6 6v3"/></svg></button>
     </div>
     <div class="order-actions">
+      <div class="views" id="views" role="group" aria-label="Baskı yüzü"></div>
       <button type="button" class="btn pr" id="preview" title="Ön İzleme" aria-label="Ön İzleme"><span aria-hidden="true">👁</span> <span class="action-label">Ön İzleme</span></button>
       <button type="button" class="btn or" id="cart" title="Sepete Ekle" aria-label="Sepete Ekle"><span aria-hidden="true">🛒</span> <span class="action-label">Sepete Ekle</span></button>
     </div>
@@ -284,7 +299,6 @@ body{display:flex;flex-direction:column;overflow:hidden}
       
     </div>
     <div class="bar">
-      <div class="views" id="views"></div>
       <div class="info" id="info2"></div>
       <div class="zoom"><input type="range" id="zoom" min="50" max="300" value="100"><span id="zoomLbl" style="width:46px">100%</span>
         <button class="ib" id="zin">🔍+</button><button class="ib" id="zout">🔍−</button><button class="ib" id="zfit">⤢</button></div>
@@ -659,7 +673,8 @@ function buildStatic(){
     b.onclick=()=>{color=c;colorName=n;syncUI();draw()}});
   SIZES.forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
     b.onclick=()=>{reflow(()=>beden=s);syncUI();draw()}});
-  [['on','Ön'],['arka','Arka']].forEach(([v,n])=>{const b=el('button',{},$('views'));b.dataset.v=v;el('canvas',{width:200,height:200},b);b.append(n);
+  [['on','Ön'],['arka','Arka']].forEach(([v,n])=>{const b=el('button',{type:'button'},$('views'));b.dataset.v=v;
+    const thumbnail=el('canvas',{width:200,height:200},b);thumbnail.setAttribute('aria-hidden','true');b.append(n);
     b.onclick=()=>{view=v;sel=null;syncUI();draw()}});
 }
 function buildPrintFormats(){
@@ -694,7 +709,7 @@ function syncUI(){
   document.querySelectorAll('#prods button').forEach(b=>{b.classList.toggle('on',b.dataset.k===product);thumb(b.firstChild,b.dataset.k,'on',color,'#dcdce6')});
   document.querySelectorAll('#cols button').forEach(b=>b.classList.toggle('on',b.dataset.c===color));
   document.querySelectorAll('#bedens button').forEach(b=>b.classList.toggle('on',b.dataset.b===beden));
-  $('bedenBox').style.display=g?'block':'none';$('views').style.display=g?'flex':'none';
+  $('bedenBox').style.display=g?'block':'none';$('views').hidden=!g;
   [...$('printFormats').children].forEach((button,index)=>button.setAttribute('aria-pressed',String(index===sizeIdx[product])));
   const [e,b]=OLCU[isGiyim()?product:'tisort'][beden],cm=curSize(),f1=x=>(Math.round(x*10)/10).toString().replace('.',','),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
   let info;
@@ -702,7 +717,7 @@ function syncUI(){
   else if(P.kind==='kanvas')info=`<div><b>Kanvas Ölçüleri</b><span>Ön yüz: ${(cm.w-7.5).toString().replace('.',',')}×${(cm.h-7.5).toString().replace('.',',')} cm</span><span>Katlama payı: 3,75 cm</span></div>`;
   else info=`<div><b>${P.name} Ölçüleri</b><span>Baskı alanı: ${cm.w}×${cm.h} cm</span></div>`;
   $('info').innerHTML=info;$('info2').innerHTML=info;
-  document.querySelectorAll('#views button').forEach(x=>{x.classList.toggle('on',x.dataset.v===view);thumb(x.firstChild,product,x.dataset.v,color,'#8d8d8d')});
+  document.querySelectorAll('#views button').forEach(x=>{x.setAttribute('aria-pressed',String(x.dataset.v===view));thumb(x.firstChild,product,x.dataset.v,color,'#8d8d8d')});
   syncSel();syncHist();
 }
 
