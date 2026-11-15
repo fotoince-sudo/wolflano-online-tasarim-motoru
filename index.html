@@ -48,7 +48,10 @@ canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .lbl{position:absolute;left:18px;bottom:16px;color:#fff;font-size:13px;line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
 .tog{position:absolute;right:16px;bottom:14px;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px #0003}
 .tog input{width:36px;height:20px;accent-color:var(--p)}
-.thumbs{display:flex;gap:10px;margin-top:12px;min-height:110px}
+.thumbs{display:flex;justify-content:center;gap:14px;margin-top:12px;min-height:0}
+.thumbs .qa{width:56px;height:56px;border-radius:14px;border:1px solid #d7d7e0;background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--p);box-shadow:0 1px 4px #0001}
+.thumbs .qa svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.thumbs .qa:active{background:#f0eefc}
 .thumbs button{border:2px solid transparent;background:none;padding:0;border-radius:10px;font-size:13px;color:var(--mut);flex:0 0 auto;text-align:center}
 .thumbs button canvas{display:block;border-radius:8px;background:#8d8d8d}
 .thumbs button.on{border-color:var(--p);color:var(--p)}
@@ -186,7 +189,11 @@ dialog::backdrop{background:#000a}
       <div class="lbl">Tasarım Duvarı<br>120 x 120 cm (Sabit)</div>
       <label class="tog">Baskı Alanı Göster <input type="checkbox" id="showArea" checked></label>
     </div>
-    <div class="thumbs" id="thumbs"></div>
+    <div class="thumbs" id="thumbs">
+      <button type="button" class="qa" id="qaImg" title="Görsel Ekle" aria-label="Görsel Ekle"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg></button>
+      <button type="button" class="qa" id="qaProd" title="Ürün Seç" aria-label="Ürün Seç"><svg viewBox="0 0 24 24"><path d="M8 3l-5 3 2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3c-.6 1.6-2 2.5-4 2.5S8.6 4.6 8 3z"/></svg></button>
+      <button type="button" class="qa" id="qaTxt" title="Yazı Ekle" aria-label="Yazı Ekle"><svg viewBox="0 0 24 24"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></button>
+    </div>
   </section>
 
   <aside class="opts card">
@@ -420,6 +427,9 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
   setFly(document.getElementById('f-'+t).classList.contains('on')?'':t);
 });
 $('addText').onclick=()=>{const a=getArea();add({type:'text',text:$('txt').value.trim()||'Yazı',size:Math.round(Math.min(a.w,a.h)*.25),fill:'#000000',font:'Arial'});$('txt').value=''};
+$('qaImg').onclick=()=>document.querySelector('#nav [data-t=image]').click();
+$('qaTxt').onclick=()=>document.querySelector('#nav [data-t=text]').click();
+$('qaProd').onclick=()=>{window.parent!==window&&parent.postMessage({type:'wolflano:urun-sec'},'*');dispatchEvent(new CustomEvent('wolflano:urun-sec'));toast('Ürün Seç sayfasına yönlendirilecek')};
 $('file').onchange=e=>{
   const f=e.target.files[0];if(!f)return;const img=new Image();
   img.onload=()=>{const a=getArea();add({type:'image',img,s:Math.min(a.w/img.width,a.h/img.height)*.8})};
