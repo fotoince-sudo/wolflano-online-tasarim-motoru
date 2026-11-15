@@ -64,9 +64,8 @@ canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .lbl{position:absolute;left:18px;bottom:16px;color:#fff;font-size:13px;line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
 .tog{position:absolute;right:16px;bottom:14px;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px #0003}
 .tog input{width:36px;height:20px;accent-color:var(--p)}
-.colpop{display:none;position:fixed;left:88px;background:#fff;border:1px solid #d7d7e0;border-radius:14px;padding:12px;box-shadow:0 6px 20px #0003;z-index:5;width:max-content;max-width:92vw}
+.colpop{display:none;position:fixed;left:88px;background:#fff;border:1px solid #d7d7e0;border-radius:14px;padding:12px;box-shadow:0 6px 20px #0003;z-index:5;width:min(344px,92vw)}
 .colpop.open{display:block}
-.colpop .cols{gap:10px;flex-wrap:nowrap}
 #prodBox,#bedenBox{display:none!important}
 .opts section{padding:12px 0;border-bottom:1px solid var(--bd)}
 .opts section:last-child{border:0}
@@ -75,9 +74,10 @@ canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .prods button{border:2px solid var(--bd);background:#fff;border-radius:10px;padding:3px 2px;font-size:11px}
 .prods button canvas{width:100%;height:auto;display:block;border-radius:6px;background:#e7e7ee}
 .prods button.on{border-color:var(--p);box-shadow:0 0 0 2px var(--p) inset}
-.cols{display:flex;gap:12px;flex-wrap:wrap}
-.cols button{width:42px;height:42px;border-radius:50%;border:2px solid #cfcfe0;padding:0}
-.cols button.on{outline:3px solid var(--p);outline-offset:2px}
+.cols{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px 5px}
+.cols button{display:grid;justify-items:center;align-content:start;gap:5px;min-width:0;border:0;background:transparent;padding:4px 0;font-size:10px;font-weight:600;line-height:1.15}
+.color-dot{width:34px;height:34px;border-radius:50%;border:1px solid #c5c5d4}
+.cols button.on .color-dot{outline:2px solid var(--p);outline-offset:2px}
 .sizes{display:flex;gap:6px;flex-wrap:wrap}
 .sizes button{border:1px solid var(--bd);background:#fff;border-radius:9px;padding:10px 11px;font-weight:600;font-size:14px}
 .sizes button.on{background:var(--p);color:#fff;border-color:var(--p)}
@@ -430,7 +430,10 @@ const PRODUCTS={
     {n:'Kanvas dikey 35×50 cm (+3,75 cm katlama payı)',short:'35×50',w:42.5,h:57.5},
     {n:'Kanvas yatay 50×35 cm (+3,75 cm katlama payı)',short:'50×35',w:57.5,h:42.5}]}
 };
-const COLORS=[['Beyaz','#ffffff'],['Siyah','#1a1a1a'],['Lacivert','#304d83'],['Gri','#a8a8a8'],['Bej','#e3d9c0'],['Yeşil','#4b6b22']];
+const COLORS=[
+  ['Beyaz','#ffffff'],['Siyah','#1a1a1a'],['Lacivert','#304d83'],['Gri','#a8a8a8'],['Bej','#e3d9c0'],
+  ['Yeşil','#4b6b22'],['Kırmızı','#c62937'],['Yavruağzı','#f3a58c'],['Açık Mavi','#a7d1ec'],['Açık Pembe','#f2bdcf']
+];
 const VIEWS=[['on','Ön'],['arka','Arka'],['solyan','Sol Yan'],['sagyan','Sağ Yan'],['yaka','Yaka Detayı']];
 const EMOJIS=['😀','😍','🔥','⭐','❤️','🎉','🐱','🐶','🌈','⚽','🎸','🚀'];
 const SHAPES=[['rect','▭'],['circle','●'],['star','★'],['heart','♥'],['tri','▲']];
@@ -855,7 +858,9 @@ function buildStatic(){
       buildPrintFormats();syncUI();draw();setZoom(zoom,true);
     };
   });
-  COLORS.forEach(([n,c])=>{const b=el('button',{title:n},$('cols'));b.style.background=c;b.dataset.c=c;
+  COLORS.forEach(([n,c])=>{const b=el('button',{type:'button',title:n},$('cols'));b.dataset.c=c;
+    const dot=el('span',{className:'color-dot'},b);dot.style.background=c;
+    el('span',{textContent:n},b);
     b.onclick=()=>{color=c;colorName=n;syncUI();draw()}});
   SIZES.forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
     b.onclick=()=>{reflow(()=>beden=s);syncUI();draw()}});
@@ -901,7 +906,10 @@ function syncSel(){
 function syncUI(){
   const P=PRODUCTS[product],g=isGiyim();
   document.querySelectorAll('#prods button').forEach(b=>{b.classList.toggle('on',b.dataset.k===product);thumb(b.firstChild,b.dataset.k,'on',color,'#dcdce6')});
-  document.querySelectorAll('#cols button').forEach(b=>b.classList.toggle('on',b.dataset.c===color));
+  document.querySelectorAll('#cols button').forEach(b=>{
+    const active=b.dataset.c===color;
+    b.classList.toggle('on',active);b.setAttribute('aria-pressed',String(active));
+  });
   document.querySelectorAll('#bedens button').forEach(b=>b.classList.toggle('on',b.dataset.b===beden));
   $('bedenBox').style.display=g?'block':'none';$('views').hidden=!g;
   [...$('printFormats').children].forEach((button,index)=>button.setAttribute('aria-pressed',String(index===sizeIdx[product])));
