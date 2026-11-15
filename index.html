@@ -38,7 +38,7 @@ input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--b
 .pre button{font-size:13px;padding:8px}
 .app>*{min-width:0}
 .stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px;width:min(100%,calc(100vh - 140px));margin:0 auto}
-.vp{overflow:auto;aspect-ratio:1;border-radius:10px}
+.vp{touch-action:none;overflow:auto;aspect-ratio:1;border-radius:10px}
 canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 .lbl{position:absolute;left:18px;bottom:16px;color:#fff;font-size:13px;line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
 .tog{position:absolute;right:16px;bottom:14px;background:#fff;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;gap:8px;align-items:center;box-shadow:0 2px 8px #0003}
@@ -131,8 +131,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .nav button i{width:44px;height:44px;font-size:20px}
   .panel{position:fixed;left:0;right:0;bottom:76px;width:auto;max-height:46vh;z-index:29;border-right:0;border-top:1px solid var(--bd);box-shadow:0 -6px 20px #0002;border-radius:16px 16px 0 0}
   .bar{margin-bottom:76px}
-  .bar .zoom{margin-left:0;width:100%}
-  .bar .zoom input{flex:1;width:auto}
+  .bar .zoom{display:none}
   .logo{font-size:20px}.logo small{font-size:16px}
   .btn{padding:9px 12px;font-size:13px}.ib{width:36px;height:36px}
   .top{padding:8px 10px;flex-wrap:wrap}
@@ -540,14 +539,29 @@ function handleHit(p){
   const at=(x,y)=>({x:sel.x+x*c-y*n,y:sel.y+x*n+y*c}),near=q=>Math.hypot(p.x-q.x,p.y-q.y)<=26*u;
   if(near(at(w/2+o,h/2+o)))return'rot';if(near(at(w/2+o,-h/2-o)))return'scale';return null;
 }
+const ptrs=new Map();let gest=null,ignore=false;
+const vpEl=$('vp'),mid=()=>{const q=[...ptrs.values()];return{x:(q[0].x+q[1].x)/2,y:(q[0].y+q[1].y)/2,d:Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y)||1}};
+function setZoomPx(z){zoom=Math.max(50,Math.min(400,z));cv.style.width=zoom+'%';$('zoom').value=Math.min(300,zoom);$('zoomLbl').textContent=Math.round(zoom)+'%'}
 cv.onpointerdown=e=>{
+  ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  if(ptrs.size>=2){
+    if(drag&&moved)commit();drag=null;snapV=snapH=false;ignore=true;
+    const m=mid(),r=vpEl.getBoundingClientRect();
+    gest={d0:m.d,z0:zoom,fx:(vpEl.scrollLeft+m.x-r.left)/cv.clientWidth,fy:(vpEl.scrollTop+m.y-r.top)/cv.clientHeight};return;
+  }
+  if(ignore)return;
   const p=pos(e);
   const hh=handleHit(p);
   if(hh){drag={[hh]:true,d0:Math.hypot(p.x-sel.x,p.y-sel.y)||1,cm0:toCm(sel)};moved=false;cv.setPointerCapture(e.pointerId);return}
   sel=(sel&&hit(sel,p,14*uPx())?sel:null)||[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
-  if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};cv.setPointerCapture(e.pointerId);syncSel();draw();
+  drag=sel?{dx:p.x-sel.x,dy:p.y-sel.y}:{pan:true,x:e.clientX,y:e.clientY,sl:vpEl.scrollLeft,st:vpEl.scrollTop};syncSel();draw();
 };
 cv.onpointermove=e=>{
+  if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(gest){if(ptrs.size<2)return;const m=mid(),r=vpEl.getBoundingClientRect();setZoomPx(gest.z0*m.d/gest.d0);
+    vpEl.scrollLeft=gest.fx*cv.clientWidth-(m.x-r.left);vpEl.scrollTop=gest.fy*cv.clientHeight-(m.y-r.top);draw();return}
+  if(ignore)return;
+  if(drag&&drag.pan){vpEl.scrollLeft=drag.sl-(e.clientX-drag.x);vpEl.scrollTop=drag.st-(e.clientY-drag.y);return}
   if(drag&&drag.scale&&sel){const p=pos(e),k=Math.hypot(p.x-sel.x,p.y-sel.y)/drag.d0;fromCm(sel,Math.max(1,Math.min(60,drag.cm0*k)));$('pScale').value=toCm(sel);$('sizeLbl').textContent=Math.round(toCm(sel)*2)/2+' cm';moved=true;draw();return}
   if(drag&&drag.rot&&sel){const p=pos(e),{w,h}=itemSize(sel);let d=(Math.atan2(p.y-sel.y,p.x-sel.x)-Math.atan2(h,w))*180/Math.PI;d=((d+540)%360)-180;
     for(const k of [-180,-135,-90,-45,0,45,90,135,180])if(Math.abs(d-k)<4)d=k;
@@ -557,7 +571,11 @@ cv.onpointermove=e=>{
   if(snapV)sel.x=A.x+A.w/2;if(snapH)sel.y=A.y+A.h/2;
   if((snapV||snapH)&&!was&&navigator.vibrate)try{navigator.vibrate(8)}catch(_){}
   draw()};
-cv.onpointerup=()=>{if(drag&&moved)commit();drag=null;if(snapV||snapH){snapV=snapH=false;draw()}};
+cv.onpointercancel=cv.onpointerup=e=>{
+  ptrs.delete(e.pointerId);if(ptrs.size<2)gest=null;if(ptrs.size===0)ignore=false;
+  if(ignore)return;
+  if(drag&&moved)commit();drag=null;if(snapV||snapH){snapV=snapH=false;draw()}};
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
 window.onkeydown=e=>{if(e.key==='Delete'&&sel&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))$('del').click()};
 
 // ---- sağ panel
