@@ -148,7 +148,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .ctx #sel .r input[type=range]{flex:1;width:auto;min-width:0}
   .ctx #sel .r input[type=color]{flex:none}
   .ctx #sel .r:last-child{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-  .ctx #sel .r:nth-last-child(2){grid-column:1/-1}
+  .ctx #sel .sl{display:none}
+  .ctx #sel #selColor{grid-column:1/-1}
   .ctx #sel .sm{padding:8px 2px;font-size:13px}
 }
 @media(max-height:520px) and (min-width:801px){
@@ -183,8 +184,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
           </select>
         </div>
         <div class="r" id="selColor"><label>Renk</label><input type="color" id="pColor" value="#000000"></div>
-        <div class="r"><label id="sizeLbl">Boyut</label><input type="range" id="pScale" min="1" max="60" step="0.5"></div>
-        <div class="r"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180"></div>
+        <div class="r sl"><label id="sizeLbl">Boyut</label><input type="range" id="pScale" min="1" max="60" step="0.5"></div>
+        <div class="r sl"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180"></div>
         <div class="r"><button class="sm" id="front">⬆ Öne</button><button class="sm" id="back">⬇ Arkaya</button><button class="sm" id="dup">⧉ Kopyala</button><button class="sm" id="del">🗑 Sil</button></div>
       </div></div>
 </div>
@@ -434,17 +435,19 @@ function drawDesign(p,v){
 }
 
 // c: hedef canvas. o.ui=true → kılavuzlar/seçim çizilir
-const HANDLE=44;
 function render(c,o={}){
   const p=o.p||product,v=o.v||view,prev=ctx;ctx=c.getContext('2d');ctx.setTransform(c.width/W,0,0,c.width/W,0,0);
   drawWall();drawProduct(p,v,color);drawDesign(p,v);
   if(o.ui){
     drawGuides();
     if(showArea){const a=getArea(p,v);ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=1.5;ctx.strokeRect(a.x,a.y,a.w,a.h);ctx.restore()}
-    if(sel){const {w,h}=itemSize(sel);ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5;ctx.strokeRect(-w/2,-h/2,w,h);
-      const hy=-h/2-HANDLE;ctx.beginPath();ctx.moveTo(0,-h/2);ctx.lineTo(0,hy);ctx.stroke();
-      ctx.beginPath();ctx.arc(0,hy,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();
-      ctx.beginPath();ctx.arc(0,hy,6.5,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(4.5,hy-8);ctx.lineTo(8.5,hy-3);ctx.lineTo(2.5,hy-2.5);ctx.fillStyle='#2f6fed';ctx.fill();ctx.restore()}
+    if(sel){const {w,h}=itemSize(sel);ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=2;ctx.strokeRect(-w/2,-h/2,w,h);
+      const dot=(x,y)=>{ctx.beginPath();ctx.arc(x,y,22,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke()};
+      // sağ alt: döndür
+      dot(w/2,h/2);ctx.beginPath();ctx.arc(w/2,h/2,6.5,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(w/2+4.5,h/2-8);ctx.lineTo(w/2+8.5,h/2-3);ctx.lineTo(w/2+2.5,h/2-2.5);ctx.fillStyle='#2f6fed';ctx.fill();
+      // sağ üst: küçült/büyüt
+      const X=w/2,Y=-h/2;dot(X,Y);ctx.beginPath();ctx.moveTo(X-6,Y+6);ctx.lineTo(X+6,Y-6);ctx.moveTo(X+1,Y-6);ctx.lineTo(X+6,Y-6);ctx.lineTo(X+6,Y-1);ctx.moveTo(X-1,Y+6);ctx.lineTo(X-6,Y+6);ctx.lineTo(X-6,Y+1);ctx.stroke();
+      ctx.restore()}
   }
   ctx=prev;
 }
@@ -530,18 +533,21 @@ function hit(it,p){
   const lx=dx*Math.cos(a)-dy*Math.sin(a),ly=dx*Math.sin(a)+dy*Math.cos(a);return Math.abs(lx)<=w/2&&Math.abs(ly)<=h/2;
 }
 let drag=null,moved=false;
-function onHandle(p){
-  if(!sel)return false;const {h}=itemSize(sel),a=sel.rot*Math.PI/180,d=h/2+HANDLE;
-  return Math.hypot(p.x-(sel.x+Math.sin(a)*d),p.y-(sel.y-Math.cos(a)*d))<=26;
+function handleHit(p){
+  if(!sel)return null;const {w,h}=itemSize(sel),a=sel.rot*Math.PI/180,c=Math.cos(a),n=Math.sin(a);
+  const at=(x,y)=>({x:sel.x+x*c-y*n,y:sel.y+x*n+y*c}),near=q=>Math.hypot(p.x-q.x,p.y-q.y)<=34;
+  if(near(at(w/2,h/2)))return'rot';if(near(at(w/2,-h/2)))return'scale';return null;
 }
 cv.onpointerdown=e=>{
   const p=pos(e);
-  if(onHandle(p)){drag={rot:true};moved=false;cv.setPointerCapture(e.pointerId);return}
+  const hh=handleHit(p);
+  if(hh){drag={[hh]:true,d0:Math.hypot(p.x-sel.x,p.y-sel.y)||1,cm0:toCm(sel)};moved=false;cv.setPointerCapture(e.pointerId);return}
   sel=[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
   if(sel)drag={dx:p.x-sel.x,dy:p.y-sel.y};cv.setPointerCapture(e.pointerId);syncSel();draw();
 };
 cv.onpointermove=e=>{
-  if(drag&&drag.rot&&sel){const p=pos(e);let d=Math.atan2(p.y-sel.y,p.x-sel.x)*180/Math.PI+90;d=((d+540)%360)-180;
+  if(drag&&drag.scale&&sel){const p=pos(e),k=Math.hypot(p.x-sel.x,p.y-sel.y)/drag.d0;fromCm(sel,Math.max(1,Math.min(60,drag.cm0*k)));$('pScale').value=toCm(sel);$('sizeLbl').textContent=Math.round(toCm(sel)*2)/2+' cm';moved=true;draw();return}
+  if(drag&&drag.rot&&sel){const p=pos(e),{w,h}=itemSize(sel);let d=(Math.atan2(p.y-sel.y,p.x-sel.x)-Math.atan2(h,w))*180/Math.PI;d=((d+540)%360)-180;
     for(const k of [-180,-90,0,90,180])if(Math.abs(d-k)<4)d=k;
     sel.rot=Math.round(d);$('pRot').value=sel.rot;moved=true;draw();return}
   if(!drag||!sel)return;const p=pos(e);sel.x=p.x-drag.dx;sel.y=p.y-drag.dy;moved=true;draw()};
