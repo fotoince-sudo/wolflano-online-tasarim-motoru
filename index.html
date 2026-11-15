@@ -327,8 +327,8 @@ function getArea(p=product,v=view){
   const cm=curSize(p),w=cm.w*S,h=cm.h*S;
   if(isGiyim(p)){
     const {B}=dims(p),t=CY-B/2;
-    // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 10 cm (4") sağda (giyenin solu)
-    const dx=cm.logo&&v==='on'?10*S:0;
+    // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 13 cm sağda (giyenin solu)
+    const dx=cm.logo&&v==="on"?13*S:0;
     const top=t+(v==='on'?(NECK_FRONT+(cm.logo?8.9:6.4)):(NECK_BACK+5.1))*S;
     return{x:CX+dx-w/2,y:top,w,h,cm};
   }
