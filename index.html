@@ -44,7 +44,6 @@ button{cursor:pointer}
 .template-options{display:grid;gap:10px;padding:10px}
 .template-options h5{margin:0 0 6px;font-size:13px}
 .sel{margin-top:12px;display:none}
-.sel h4{margin:0 0 8px}
 input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--bd);border-radius:9px;margin-bottom:8px;background:#fff}
 .r{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .r label{font-size:13px;min-width:56px;color:var(--mut)}
@@ -101,19 +100,19 @@ body{height:100dvh}
 body{display:flex;flex-direction:column;overflow:hidden}
 .ctx{display:flex;align-items:center;gap:12px;background:#fff;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);padding:6px 16px;min-height:52px;flex-wrap:wrap}
 .ctx[hidden]{display:none}
-.ctx select{width:auto;margin:0;padding:7px 9px}
 .bar .info{margin:0;padding:6px 10px;font-size:12px;gap:8px}
 .bar .info b{display:inline;margin:0 6px 0 0}
 .bar .info svg{width:22px;height:22px}
 .ctx #sel{margin:0;flex:1;min-width:0}
-.ctx #sel h4{display:none}
 .selIn{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.ctx #sel .r,.ctx #sel select,.ctx #sel textarea{margin:0}
-.ctx #sel #selText{align-items:center;gap:10px}
-.ctx #sel textarea{width:130px;height:36px;resize:none;padding:6px 8px}
-.ctx #sel select{width:105px}
+.ctx #sel .r{margin:0}
 .ctx #sel .r label{min-width:0}
 .ctx #sel .r input[type=range]{width:70px;flex:none}
+#f-text .selIn{gap:8px}
+#f-text #pFont{width:auto;margin:0}
+#f-text #sel .r{margin:0}
+#f-text #sel .sl{width:100%}
+#f-text #addText,#f-text #newText{width:100%}
 .app{flex:1;min-height:0;display:flex}
 .rail{width:80px;flex:none;background:#fff;border-right:1px solid var(--bd);overflow-y:auto;padding:8px 0}
 .nav{display:flex;flex-direction:column;gap:2px;align-items:center}
@@ -155,9 +154,6 @@ body{display:flex;flex-direction:column;overflow:hidden}
   html,body{overflow-x:hidden;max-width:100vw}
   .ctx{padding:6px 10px;display:block}
   .selIn{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .ctx #sel #selText{grid-column:1/-1;display:flex}
-  .ctx #sel textarea{flex:1;width:auto;min-width:0}
-  .ctx #sel select{width:120px}
   .ctx #sel .r{flex-wrap:nowrap;min-width:0}
   .ctx #sel .r input[type=range]{flex:1;width:auto;min-width:0}
   .ctx #sel .r input[type=color]{flex:none}
@@ -165,6 +161,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .ctx #sel .sl{display:none}
   .ctx #sel #selColor{grid-column:1/-1}
   .ctx #sel .sm{padding:8px 2px;font-size:13px}
+  #f-text #sel .sl{display:none}
+  #f-text #sel .r:last-child{grid-column:1/-1}
 }
 @media(max-width:960px){
   .order-actions .btn{display:grid;place-items:center;width:36px;height:38px;padding:0;font-size:18px}
@@ -218,14 +216,10 @@ body{display:flex;flex-direction:column;overflow:hidden}
 <div class="ctx" id="context" hidden>
   <div class="info" id="info" style="display:none"></div>
   <div class="sel" id="sel"><div class="selIn">
-        <h4>Seçili öğe</h4>
-        <div id="selText">
-          <textarea id="pText" rows="2"></textarea>
-          <select id="pFont">
-            <option>Arial</option><option>Georgia</option><option>Impact</option>
-            <option>Courier New</option><option>Comic Sans MS</option><option>Brush Script MT</option>
-          </select>
-        </div>
+        <select id="pFont" aria-label="Yazı tipi" hidden>
+          <option>Arial</option><option>Georgia</option><option>Impact</option>
+          <option>Courier New</option><option>Comic Sans MS</option><option>Brush Script MT</option>
+        </select>
         <div class="r" id="selColor"><label>Renk</label><input type="color" id="pColor" value="#000000"></div>
         <div class="r sl"><label id="sizeLbl">Boyut</label><input type="range" id="pScale" min="1" max="60" step="0.5"></div>
         <div class="r sl"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180"></div>
@@ -252,9 +246,11 @@ body{display:flex;flex-direction:column;overflow:hidden}
   <aside class="panel" id="panel">
     <button class="x" id="pClose" aria-label="Kapat">✕</button>
     <div class="fly" id="f-text">
-        <h4>Metin Ekle</h4>
-        <textarea id="txt" rows="2" placeholder="Metninizi yazın..."></textarea>
-        <button class="btn pr" id="addText" style="width:100%">Ekle</button>
+        <h4 id="textTitle">Metin Ekle</h4>
+        <textarea id="txt" rows="2" aria-label="Metin" placeholder="Metninizi yazın..."></textarea>
+        <button class="btn pr" id="addText" type="button">Ekle</button>
+        <button class="sm" id="newText" type="button" hidden>Yeni yazı</button>
+        <div id="textSelectionControls"></div>
       </div>
       <div class="fly" id="f-template">
         <h4>Hazır Tasarımlar</h4>
@@ -552,7 +548,20 @@ document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{
   const t=b.dataset.t;if(t==='image'){setFly('image');$('file').click();return}
   setFly(document.getElementById('f-'+t).classList.contains('on')?'':t);
 });
-$('addText').onclick=()=>{const a=getArea();add({type:'text',text:$('txt').value.trim()||'Yazı',size:Math.round(Math.min(a.w,a.h)*.25),fill:'#000000',font:'Arial'});$('txt').value=''};
+let textDraft='';
+$('txt').oninput=e=>{
+  if(sel?.type==='text'){sel.text=e.target.value||' ';draw()}
+  else{textDraft=e.target.value}
+};
+$('txt').onchange=()=>{if(sel?.type==='text')commit()};
+$('addText').onclick=()=>{
+  const a=getArea(),text=$('txt').value.trim()||'Yazı';
+  textDraft='';
+  add({type:'text',text,size:Math.round(Math.min(a.w,a.h)*.25),fill:'#000000',font:'Arial'});
+};
+$('newText').onclick=()=>{
+  sel=null;syncSel();draw();$('txt').focus();
+};
 $('qaCol').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect(),c=$('colPop');c.style.top=Math.max(8,r.top)+'px';c.classList.toggle('open')};
 document.addEventListener('click',e=>{if(!$('colPop').contains(e.target))$('colPop').classList.remove('open')});
 $('qaProd').onclick=()=>{window.parent!==window&&parent.postMessage({type:'wolflano:urun-sec'},'*');dispatchEvent(new CustomEvent('wolflano:urun-sec'));toast('Ürün Seç sayfasına yönlendirilecek')};
@@ -591,12 +600,11 @@ $('bgDel').onclick=()=>{delete bgs[key()];commit();draw()};
 // ---- seçili öğe paneli (boyut cm cinsinden)
 const toCm=it=>it.type==='text'?it.size/S:it.type==='image'?it.img.width*it.s/S:it.size/S;
 function fromCm(it,cm){if(it.type==='text')it.size=cm*S;else if(it.type==='image')it.s=cm*S/it.img.width;else it.size=cm*S}
-$('pText').oninput=e=>{sel.text=e.target.value||' ';draw()};
 $('pFont').onchange=e=>{sel.font=e.target.value;commit();draw()};
 $('pColor').oninput=e=>{sel.fill=e.target.value;draw()};
 $('pRot').oninput=e=>{sel.rot=+e.target.value;draw()};
 $('pScale').oninput=e=>{fromCm(sel,+e.target.value);$('sizeLbl').textContent=(+e.target.value)+' cm';draw()};
-['pText','pColor','pRot','pScale'].forEach(i=>$(i).onchange=()=>commit());
+['pColor','pRot','pScale'].forEach(i=>$(i).onchange=()=>commit());
 $('del').onclick=()=>{cur().splice(cur().indexOf(sel),1);sel=null;commit();syncUI();draw()};
 $('dup').onclick=()=>{if(!sel)return;const c={...sel,x:sel.x+12,y:sel.y+12};cur().push(c);sel=c;commit();syncUI();draw()};
 $('front').onclick=()=>{if(!sel)return;const a=cur();a.push(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
@@ -696,11 +704,19 @@ function buildPrintFormats(){
   });
 }
 function syncSel(){
-  $('context').hidden=!sel;
-  $('sel').style.display=sel?'block':'none';if(!sel)return;
-  $('selText').style.display=sel.type==='text'?'flex':'none';
+  const editingText=sel?.type==='text';
+  const controls=$('sel'),container=$(editingText?'textSelectionControls':'context');
+  if(controls.parentElement!==container)container.append(controls);
+  $('context').hidden=!sel||editingText;
+  $('textTitle').textContent=editingText?'Metni Düzenle':'Metin Ekle';
+  $('addText').hidden=editingText;
+  $('newText').hidden=!editingText;
+  const text=editingText?sel.text:textDraft;
+  if($('txt').value!==text)$('txt').value=text;
+  controls.style.display=sel?'block':'none';if(!sel)return;
+  $('pFont').hidden=!editingText;
   $('selColor').style.display=sel.type==='image'?'none':'flex';
-  if(sel.type==='text'){$('pText').value=sel.text;$('pFont').value=sel.font}
+  if(editingText)$('pFont').value=sel.font;
   if(sel.type!=='image')$('pColor').value=sel.fill;
   const cm=Math.round(toCm(sel)*2)/2;$('pScale').value=cm;$('sizeLbl').textContent=cm+' cm';$('pRot').value=sel.rot;
 }
@@ -740,7 +756,7 @@ function exportDesign(v){ // 300 DPI, gerçek cm boyutunda
   (designs[key(product,v)]||[]).forEach(drawItem);ctx=prev;return c.toDataURL('image/png');
 }
 $('preview').onclick=()=>{
-  sel=null;draw();const pv=$('pv');pv.innerHTML='';$('pvBtns').innerHTML='';
+  sel=null;syncSel();draw();const pv=$('pv');pv.innerHTML='';$('pvBtns').innerHTML='';
   (isGiyim()?['on','arka']:['on']).forEach(v=>{
     const c=el('canvas',{width:W,height:W});render(c,{v});const f=el('figure',{},pv);
     el('img',{src:c.toDataURL('image/png')},f);el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
