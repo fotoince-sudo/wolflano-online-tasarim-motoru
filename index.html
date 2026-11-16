@@ -152,9 +152,17 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-shell{max-width:960px;margin:0 auto}
 .product-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .product-header h1{font-size:clamp(22px,4vw,34px);margin:0}
+.product-header a{color:var(--tx);text-decoration:none;white-space:nowrap}
+.product-catalog section+section{margin-top:20px}
+.product-catalog h2{margin:0 0 9px;font-size:18px}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.product-card{display:grid;gap:8px;padding:8px;border:1px solid var(--bd);border-radius:12px;background:#fff;color:var(--tx);text-decoration:none;font-weight:700}
+.product-card:hover,.product-card:focus-visible{border-color:var(--p);color:var(--p)}
+.product-card canvas{display:block;width:100%;height:auto;border-radius:6px}
+.product-card span{padding:0 3px 3px;font-size:clamp(12px,2vw,15px)}
 .product-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:20px;align-items:start}
+.product-layout[hidden]{display:none}
 .product-model,.product-form{padding:clamp(12px,2vw,20px);border:1px solid var(--bd);border-radius:14px;background:#fff}
-.product-model h2{margin:0 0 10px;font-size:20px}
 .product-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .product-views figure{margin:0}
 .product-views canvas{display:block;width:100%;height:auto;border-radius:8px}
@@ -172,10 +180,13 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-choices label span{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;min-height:36px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
 .product-choices input:checked+span{border-color:var(--p);background:var(--pl);color:var(--p)}
 .product-choices input:focus-visible+span{outline:2px solid var(--p);outline-offset:2px}
+.product-choices label .size-option{align-items:flex-start;flex-direction:column;gap:2px}
+.size-option small{font-size:11px;color:var(--mut)}
 .product-color{width:15px;height:15px;border:1px solid #1d1d2b42;border-radius:50%}
 .product-form .btn{width:100%;margin-top:4px}
 @media(max-width:700px){
   .product-layout{grid-template-columns:minmax(0,1fr);gap:10px}
+  .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .product-header{margin-bottom:10px}
   .product-form fieldset{margin-bottom:10px}
 }
@@ -372,11 +383,20 @@ body{display:flex;flex-direction:column;overflow:hidden}
   <div class="product-shell">
     <div class="product-header">
       <h1 id="productTitle" tabindex="-1">Ürün Seç</h1>
-      <button type="button" class="sm" id="productBack">Stüdyoya dön</button>
+      <a class="sm" id="productBack" href="#studyo">Stüdyoya dön</a>
     </div>
-    <div class="product-layout">
-      <section class="product-model" aria-labelledby="productModelTitle">
-        <h2 id="productModelTitle">Tişört</h2>
+    <div class="product-catalog" id="productCatalog">
+      <section aria-labelledby="standardTitle">
+        <h2 id="standardTitle">Standart Kesim</h2>
+        <div class="product-grid" id="standardProducts"></div>
+      </section>
+      <section aria-labelledby="poloTitle">
+        <h2 id="poloTitle">Polo Yaka</h2>
+        <div class="product-grid" id="poloProducts"></div>
+      </section>
+    </div>
+    <div class="product-layout" id="productDetail" hidden>
+      <section class="product-model" aria-labelledby="productTitle">
         <div class="product-views">
           <figure><canvas id="shirtFront" width="480" height="480" aria-label="Tişörtün ön yüzü"></canvas><figcaption>Ön</figcaption></figure>
           <figure><canvas id="shirtBack" width="480" height="480" aria-label="Tişörtün arka yüzü"></canvas><figcaption>Arka</figcaption></figure>
@@ -384,9 +404,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <p class="product-measure" id="productMeasurements" aria-live="polite"></p>
       </section>
       <form class="product-form" id="productForm">
-        <fieldset><legend>Tişört modeli</legend><div class="product-choices" id="productModels"></div></fieldset>
         <fieldset><legend>Renk</legend><div class="product-choices" id="productColors"></div></fieldset>
-        <fieldset><legend>Beden</legend><div class="product-choices" id="productSizes"></div></fieldset>
+        <fieldset><legend id="productSizeLegend">Beden</legend><div class="product-choices" id="productSizes"></div></fieldset>
         <label for="productPrint" class="product-print-label" id="productPrintLabel">Baskı alanı</label>
         <select id="productPrint" name="format"></select>
         <p class="hint" id="productPrintHint" hidden>A3 dikey baskı bu bedene sığmıyor.</p>
@@ -456,7 +475,7 @@ const PRODUCTS={
 };
 const COLORS=[
   ['Beyaz','#ffffff'],['Siyah','#1a1a1a'],['Lacivert','#304d83'],['Gri','#a8a8a8'],['Bej','#e3d9c0'],
-  ['Yeşil','#4b6b22'],['Kırmızı','#c62937'],['Yavruağzı','#f3a58c'],['Açık Mavi','#a7d1ec'],['Açık Pembe','#f2bdcf']
+  ['Yeşil','#4b6b22'],['Kırmızı','#c62937'],['Yavruağzı','#fac2a9'],['Açık Mavi','#a7d1ec'],['Açık Pembe','#f2bdcf']
 ];
 const VIEWS=[['on','Ön'],['arka','Arka'],['solyan','Sol Yan'],['sagyan','Sağ Yan'],['yaka','Yaka Detayı']];
 const EMOJIS=['😀','😍','🔥','⭐','❤️','🎉','🐱','🐶','🌈','⚽','🎸','🚀'];
@@ -873,7 +892,16 @@ function reflow(fn,p=product){ // baskı alanı taşınırken tasarımların fiz
 }
 const cmText=new Intl.NumberFormat('tr-TR',{maximumFractionDigits:1});
 const productForm=$('productForm');
-function productChoice(parent,name,value,label,swatch){
+const PRODUCT_ROUTES={
+  tisort:'erkek-tisort',kadinTisort:'kadin-tisort',cocukTisort:'cocuk-tisort',
+  erkekPolo:'erkek-polo',kadinPolo:'kadin-polo',cocukPolo:'cocuk-polo'
+};
+let detailProduct=null;
+function productTitleFor(p){
+  const item=PRODUCTS[p];
+  return item.polo?item.name:item.shirt+' Standart Kesim Tişört';
+}
+function productChoice(parent,name,value,label,swatch,description){
   const row=el('label',{},parent);
   el('input',{type:'radio',name,value,required:true},row);
   const caption=el('span',{},row);
@@ -882,6 +910,10 @@ function productChoice(parent,name,value,label,swatch){
     dot.style.background=swatch;
   }
   caption.append(label);
+  if(description){
+    caption.className='size-option';
+    el('small',{textContent:description},caption);
+  }
 }
 function productPreview(canvas,p,face,selectedColor,selectedSize,format){
   const prev=ctx;
@@ -894,9 +926,8 @@ function productPreview(canvas,p,face,selectedColor,selectedSize,format){
   ctx=prev;
 }
 function syncProductPage(){
-  const {model,beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
-  const p=model.value,item=PRODUCTS[p],{e,b}=dims(p,shirtSize.value),format=item.sizes[printFormat.value];
-  $('productModelTitle').textContent=item.polo?item.name:item.shirt+' Standart Kesim Tişört';
+  const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
+  const p=detailProduct,item=PRODUCTS[p],{e,b}=dims(p,shirtSize.value),format=item.sizes[printFormat.value];
   productPreview($('shirtFront'),p,'on',shirtColor.value,shirtSize.value,item.polo?curSize(p,'on'):format);
   productPreview($('shirtBack'),p,'arka',shirtColor.value,shirtSize.value,item.polo?curSize(p,'arka'):format);
   $('productMeasurements').innerHTML=
@@ -917,24 +948,36 @@ function productPrintOptions(p,size,preferred){
   $('productPrintHint').hidden=choices.length===PRODUCTS[p].sizes.length;
 }
 function productSizeOptions(p){
-  const options=$('productSizes');
+  const options=$('productSizes'),child=PRODUCTS[p].shirt==='Çocuk';
   options.replaceChildren();
-  Object.keys(OLCU[p]).forEach(size=>productChoice(options,'beden',size,size));
+  $('productSizeLegend').textContent=child?'Beden · göğüs eni × tişört boyu':'Beden';
+  Object.entries(OLCU[p]).forEach(([size,[width,height]])=>{
+    const description=child?`${cmText.format(width)} × ${cmText.format(height)} cm`:null;
+    productChoice(options,'beden',size,size,null,description);
+  });
   productForm.elements.beden.value=garmentSizes[p];
   productPrintOptions(p,garmentSizes[p],sizeIdx[p]);
 }
 function routeProduct(){
-  const opening=location.hash==='#urun-sec',page=$('productPage');
-  if(opening===!page.hidden)return;
+  const hash=location.hash,page=$('productPage');
+  const opening=hash==='#urun-sec'||hash.startsWith('#urun-sec/');
+  if(!opening&&page.hidden)return;
+  if(opening&&page.hidden)setFly('');
   document.body.classList.toggle('product-mode',opening);
   page.hidden=!opening;
   if(opening){
-    setFly('');
-    const p=PRODUCTS[product].shirt?product:'tisort';
-    productForm.elements.model.value=p;
-    productSizeOptions(p);
-    productForm.elements.renk.value=color;
-    syncProductPage();
+    detailProduct=Object.keys(PRODUCT_ROUTES).find(p=>hash==='#urun-sec/'+PRODUCT_ROUTES[p])||null;
+    $('productCatalog').hidden=!!detailProduct;
+    $('productDetail').hidden=!detailProduct;
+    $('productTitle').textContent=detailProduct?productTitleFor(detailProduct):'Ürün Seç';
+    $('productBack').href=detailProduct?'#urun-sec':'#studyo';
+    $('productBack').textContent=detailProduct?'Ürünlere dön':'Stüdyoya dön';
+    if(detailProduct){
+      productSizeOptions(detailProduct);
+      productForm.elements.renk.value=color;
+      syncProductPage();
+    }
+    page.scrollTop=0;
     $('productTitle').focus({preventScroll:true});
   }else{
     syncUI();draw();
@@ -943,20 +986,24 @@ function routeProduct(){
   window.scrollTo(0,0);
 }
 function buildProductPage(){
-  Object.entries(PRODUCTS).forEach(([p,item])=>{
-    if(item.shirt)productChoice($('productModels'),'model',p,item.shirt+(item.polo?' Polo':''));
+  Object.entries(PRODUCT_ROUTES).forEach(([p,slug])=>{
+    const grid=$(PRODUCTS[p].polo?'poloProducts':'standardProducts');
+    const card=el('a',{className:'product-card',href:'#urun-sec/'+slug},grid);
+    const canvas=el('canvas',{width:320,height:240},card);
+    canvas.setAttribute('aria-hidden','true');
+    thumb(canvas,p,'on','#ffffff','#e7ebe8');
+    el('span',{textContent:productTitleFor(p)},card);
   });
   COLORS.forEach(([name,hex])=>productChoice($('productColors'),'renk',hex,name,hex));
   productForm.onchange=event=>{
-    const {model,beden:shirtSize,format}=productForm.elements;
-    if(event.target.name==='model')productSizeOptions(model.value);
-    if(event.target.name==='beden')productPrintOptions(model.value,shirtSize.value,+format.value);
+    const {beden:shirtSize,format}=productForm.elements;
+    if(event.target.name==='beden')productPrintOptions(detailProduct,shirtSize.value,+format.value);
     syncProductPage();
   };
   productForm.onsubmit=event=>{
     event.preventDefault();
-    const {model,beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
-    const p=model.value;
+    const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
+    const p=detailProduct;
     reflow(()=>{
       garmentSizes[p]=shirtSize.value;
       if(!PRODUCTS[p].polo)sizeIdx[p]=+printFormat.value;
@@ -968,7 +1015,6 @@ function buildProductPage(){
     sel=null;
     location.hash='';
   };
-  $('productBack').onclick=()=>{location.hash=''};
   window.addEventListener('hashchange',routeProduct);
 }
 function buildStatic(){
