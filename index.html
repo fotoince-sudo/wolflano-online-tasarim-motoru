@@ -426,7 +426,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
               <div id="productPhotoFrame" class="mug-photo" hidden><img id="productPhoto" alt=""></div>
               <button type="button" class="product-zoom-button" id="zoomProductFront" aria-label="Ön görünümü yakınlaştır">+</button>
             </div>
-            <figcaption>Ön</figcaption>
+            <figcaption id="productFrontCaption">Ön</figcaption>
           </figure>
           <figure>
             <div class="product-picture">
@@ -1163,10 +1163,13 @@ function productChoice(parent,name,value,label,swatch,description){
     el('small',{textContent:description},caption);
   }
 }
-function drawMensWhiteReference(face,size){
+function usesWhiteTeeReference(p,color){
+  return Boolean(TEE_ASSETS[p])&&color==='#ffffff';
+}
+function drawWhiteTeeReference(p,face,size){
   const rear=face==='arka',photo=rear?mensWhiteBackPhoto:mensWhiteCardPhoto;
   if(!photo.naturalWidth)return false;
-  const {B}=dims('tisort',size),scale=B/(rear?925:1102);
+  const {B}=dims(p,size),scale=B/(rear?925:1102);
   const center=rear?626:750,top=rear?168:201;
   ctx.save();
   ctx.translate(CX-center*scale,CY-B/2-top*scale);
@@ -1195,7 +1198,7 @@ function productPreview(canvas,p,face,selectedColor,selectedSize,format,showPrin
   ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
   ctx.fillStyle=PRODUCT_PREVIEW_BACKGROUND;
   ctx.fillRect(0,0,W,W);
-  const reference=p==='tisort'&&selectedColor==='#ffffff'&&drawMensWhiteReference(face,selectedSize);
+  const reference=usesWhiteTeeReference(p,selectedColor)&&drawWhiteTeeReference(p,face,selectedSize);
   if(!reference&&isGiyim(p))drawGarment(p,face,selectedColor,selectedSize);
   if(!isGiyim(p)){
     const scale=PRODUCTS[p].tz;
@@ -1209,7 +1212,7 @@ function productPreview(canvas,p,face,selectedColor,selectedSize,format,showPrin
       if(reference){
         const {B}=dims(p,selectedSize);
         const neck=face==='on'?181*B/1102:53*B/925;
-        const gap=face==='on'?TEE_ASSETS.tisort.frontPrintGap:TEE_BACK_PRINT_FROM_NECK;
+        const gap=face==='on'?TEE_ASSETS[p].frontPrintGap:TEE_BACK_PRINT_FROM_NECK;
         area.y=CY-B/2+neck+gap*S;
       }
       drawPrintArea(area,selectedColor,3.5);
@@ -1253,7 +1256,7 @@ function setProductZoom(index){
 }
 function syncProductZoom(selection){
   const rear=productZoomFace==='arka';
-  const caption=rear?$('productBackCaption').textContent:'Ön';
+  const caption=$(rear?'productBackCaption':'productFrontCaption').textContent;
   $('productZoomTitle').textContent=`${productTitleFor(selection.p)} · ${caption}`;
   const canvas=$('productZoomCanvas');
   canvas.setAttribute('aria-label',caption);
@@ -1277,7 +1280,9 @@ $('productZoomOut').onclick=()=>setProductZoom(productZoomIndex-1);
 function syncProductPage(){
   const selection=selectedProductOptions();
   const {p,item,selectedColor,selectedSize,format}=selection,garment=isGiyim(p);
-  const illustrativeRear=!garment||(p==='tisort'&&selectedColor==='#ffffff'&&mensWhiteBackPhoto.naturalWidth);
+  const sharedPhoto=usesWhiteTeeReference(p,selectedColor);
+  const illustrativeRear=!garment||(sharedPhoto&&mensWhiteBackPhoto.naturalWidth);
+  $('productFrontCaption').textContent=sharedPhoto&&p!=='tisort'&&mensWhiteCardPhoto.naturalWidth?'Ön (temsili)':'Ön';
   $('productBackCaption').textContent=illustrativeRear?'Arka (temsili)':'Arka';
   renderProductView($('shirtFront'),$('productPhotoFrame'),'on',selection,true);
   renderProductView($('shirtBack'),$('productBackPhotoFrame'),'arka',selection,true);
@@ -1435,7 +1440,7 @@ function buildTeeCard(grid,p,slug){
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
-    if(!(p==='tisort'&&colorSelect.value==='#ffffff'&&drawMensWhiteReference('on',sizeSelect.value))){
+    if(!(usesWhiteTeeReference(p,colorSelect.value)&&drawWhiteTeeReference(p,'on',sizeSelect.value))){
       drawGarment(p,'on',colorSelect.value,sizeSelect.value);
     }
     ctx=previous;
@@ -1655,12 +1660,12 @@ $('cart').onclick=()=>{
 $('brandWolf').src=document.querySelector('.wolf-avatar').src;
 buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProduct();
 mensWhiteCardPhoto.onload=()=>{
-  refreshTeeCards.tisort();
-  if(detailProduct==='tisort')syncProductPage();
+  Object.values(refreshTeeCards).forEach(refresh=>refresh());
+  if(TEE_ASSETS[detailProduct])syncProductPage();
 };
 mensWhiteCardPhoto.src='assets/erkek-beyaz-kart-referans.jpeg';
 mensWhiteBackPhoto.onload=()=>{
-  if(detailProduct==='tisort')syncProductPage();
+  if(TEE_ASSETS[detailProduct])syncProductPage();
 };
 mensWhiteBackPhoto.src='assets/erkek-beyaz-detay-arka.webp';
 for(const [p,asset] of Object.entries(TEE_ASSETS)){
