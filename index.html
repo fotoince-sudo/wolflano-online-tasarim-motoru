@@ -1286,20 +1286,22 @@ function drawWhiteTeeReference(p,face,size){
 }
 const approvedStripedPoloPhoto=new Image();
 const approvedStripedPoloViews={
-  on:{left:0,width:1085,top:76,bottom:655,
-    outline:new Path2D('M544 76 C450 76 438 74 426 99 C416 121 402 139 374 159 C329 185 260 209 206 232 C157 251 143 285 120 321 C88 384 61 471 38 532 L28 577 C42 593 165 629 224 636 C231 635 235 622 240 600 L249 655 H833 L840 600 C847 618 847 635 856 636 C909 631 1037 594 1057 577 L1048 535 C1024 472 994 382 963 321 C941 285 925 252 876 232 C819 208 751 185 713 159 C686 141 670 119 660 99 C648 74 636 76 544 76 Z')},
-  arka:{left:1085,width:1084,top:70,bottom:655,
-    outline:new Path2D('M541 70 C452 70 434 72 419 96 C410 117 398 133 381 145 C325 174 255 202 196 230 C149 249 135 283 112 321 C79 384 55 471 36 534 L26 567 C48 588 145 616 222 625 C233 622 235 604 241 582 L254 655 H829 L842 582 C849 608 849 624 861 625 C929 615 1039 587 1056 566 L1047 534 C1029 471 1002 383 969 322 C947 284 931 250 883 229 C822 200 749 172 702 145 C683 131 672 118 662 96 C647 71 629 70 541 70 Z')}
+  on:{left:0,top:54,bottom:970,
+    outline:new Path2D('M385 54 C305 54 306 54 287 85 C273 116 239 132 199 150 L133 178 C104 196 84 229 68 271 L25 421 C48 437 133 461 161 458 L176 415 C188 548 175 729 155 943 L160 954 C212 972 544 977 608 955 L614 944 C594 734 587 555 598 416 L606 458 C651 463 717 439 746 421 L705 272 C688 224 670 199 642 178 L572 150 C533 133 499 115 483 85 C468 55 464 54 385 54 Z')},
+  arka:{left:768,top:50,bottom:971,
+    outline:new Path2D('M383 50 C309 50 296 55 285 82 C270 112 238 127 201 144 L128 173 C101 193 80 226 65 269 L21 414 C42 433 124 457 160 456 L173 414 C184 544 173 749 154 944 L160 954 C210 973 543 979 608 955 L614 943 C595 759 584 549 594 412 L605 456 C641 459 720 435 745 415 L702 269 C687 227 668 194 641 176 L570 145 C530 127 500 111 483 82 C472 55 459 50 383 50 Z')}
 };
 function drawApprovedStripedPolo(p,face,col,size){
-  if(p!=='erkekSeritliPolo'||col!=='#ffffff'||!approvedStripedPoloPhoto.complete||!approvedStripedPoloPhoto.naturalWidth)return false;
-  const {left,width,top,bottom,outline}=approvedStripedPoloViews[face];
-  const scale=dims(p,size).B/1050;
+  if(p!=='erkekSeritliPolo'||col!=='#ffffff'||!approvedStripedPoloPhoto.naturalWidth)return false;
+  const {left,top,bottom,outline}=approvedStripedPoloViews[face];
+  const halfWidth=approvedStripedPoloPhoto.naturalWidth/2;
+  const height=approvedStripedPoloPhoto.naturalHeight;
+  const scale=dims(p,size).B/(bottom-top);
   ctx.save();
-  ctx.translate(CX-width*scale/2,CY-(top+bottom)*scale/2);
+  ctx.translate(CX-halfWidth*scale/2,CY-(top+bottom)*scale/2);
   ctx.scale(scale,scale);
   ctx.clip(outline);
-  ctx.drawImage(approvedStripedPoloPhoto,left,0,width,725,0,0,width,725);
+  ctx.drawImage(approvedStripedPoloPhoto,left,0,halfWidth,height,0,0,halfWidth,height);
   ctx.restore();
   return true;
 }
@@ -1399,9 +1401,9 @@ function openProductZoom(face){
   const viewport=$('productZoomViewport');
   viewport.scrollLeft=0;
   viewport.scrollTop=0;
-  const closeUp=selection.p==='erkekSeritliPolo'&&selection.selectedColor==='#ffffff';
-  setProductZoom(closeUp?1:2);
-  viewport.scrollTop=closeUp?(viewport.scrollHeight-viewport.clientHeight)/2:0;
+  const fullLengthPolo=selection.p==='erkekSeritliPolo'&&selection.selectedColor==='#ffffff';
+  setProductZoom(fullLengthPolo?0:2);
+  viewport.scrollTop=0;
 }
 $('zoomProductFront').onclick=()=>openProductZoom('on');
 $('zoomProductBack').onclick=()=>openProductZoom('arka');
@@ -1803,7 +1805,7 @@ approvedStripedPoloPhoto.onload=()=>{
   refreshTeeCards.erkekSeritliPolo();
   if(detailProduct==='erkekSeritliPolo')syncProductPage();
 };
-approvedStripedPoloPhoto.src='assets/erkek-beyaz-seritli-polo-onayli.webp';
+approvedStripedPoloPhoto.src='assets/erkek-beyaz-seritli-polo-tam-boy.webp';
 for(const [name,shots] of Object.entries({'erkek-polo':mensPoloShots,'kadin-polo':womensPoloShots,'kadin-seritli-polo':womensStripedPoloShots})){
   const models=Object.keys(poloPhotoSets).filter(p=>poloPhotoSets[p]===shots);
   for(const [face,shot] of Object.entries(shots)){
