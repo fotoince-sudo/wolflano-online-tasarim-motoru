@@ -501,7 +501,8 @@ const PRODUCTS={
     coloredMugKey(choice[2]),{...MUG,name:choice[0]+' Kulplu Kupa',trim:true,colors:[choice]}
   ])),
   kupaKalpli:{...MUG,name:'Kalp Kulplu Kupa',heart:true,colors:[['Beyaz','#ffffff','kalp']]},
-  kupaPanel:{...MUG,name:'Panel Kupa',panel:true,colors:[['Siyah','#1a1a1a','panel']]},
+  kupaPanel:{...MUG,name:'Siyah Panel Kupa',panel:true,colors:[['Siyah','#1a1a1a','panel']]},
+  kupaPanelKirmizi:{...MUG,name:'Kırmızı Panel Kupa',panel:true,colors:[['Kırmızı','#c62937','panel-kirmizi']]},
   kupaSihirli:{...MUG,name:'Sihirli Kupa',colors:[['Siyah','#1a1a1a','sihirli']]},
   kanvas:canvasProduct(35,50),
   kanvasBuyuk:canvasProduct(50,70)
@@ -972,7 +973,8 @@ const PRODUCT_ROUTES={
   kanvas:'kanvas-35x50',kanvasBuyuk:'kanvas-50x70',
   kupa:'beyaz-kupa',
   ...Object.fromEntries(COLORED_MUGS.map(([, ,photo])=>[coloredMugKey(photo),photo+'-kulplu-kupa'])),
-  kupaKalpli:'kalp-kulplu-kupa',kupaPanel:'panel-kupa',kupaSihirli:'sihirli-kupa'
+  kupaPanel:'panel-kupa',kupaPanelKirmizi:'kirmizi-panel-kupa',
+  kupaKalpli:'kalp-kulplu-kupa',kupaSihirli:'sihirli-kupa'
 };
 // Gildan 5000B UK/EU yaş rehberi, mevcut çocuk standart tişört ölçüleri için.
 const CHILD_TEE_AGES={XS:'4–5',S:'5–6',M:'7–8',L:'9–11',XL:'12–14'};
@@ -1082,7 +1084,8 @@ const MUG_FRAMES={
   mavi:[750,750,113,88,697,663],kirmizi:[1722,1722,545,464,1439,1322],
   sari:[750,750,130,103,686,662],pembe:[750,750,81,81,714,668],
   yesil:[1722,1722,547,455,1497,1351],kalp:[480,480,76,58,451,420],
-  panel:[750,750,142,142,702,638],sihirli:[750,750,74,101,726,676]
+  panel:[750,750,142,142,702,638],'panel-kirmizi':[1254,1254,237,240,1174,1066],
+  sihirli:[750,750,74,101,726,676]
 };
 function setMugPhoto(image,name,alt=''){
   const [width,height,left,top,right,bottom]=MUG_FRAMES[name];
