@@ -1284,25 +1284,22 @@ function drawWhiteTeeReference(p,face,size){
   ctx.restore();
   return true;
 }
-const approvedStripedPoloPhoto=new Image();
-const approvedStripedPoloViews={
-  on:{left:0,top:54,bottom:970,
-    outline:new Path2D('M385 54 C305 54 306 54 287 85 C273 116 239 132 199 150 L133 178 C104 196 84 229 68 271 L25 421 C48 437 133 461 161 458 L176 415 C188 548 175 729 155 943 L160 954 C212 972 544 977 608 955 L614 944 C594 734 587 555 598 416 L606 458 C651 463 717 439 746 421 L705 272 C688 224 670 199 642 178 L572 150 C533 133 499 115 483 85 C468 55 464 54 385 54 Z')},
-  arka:{left:768,top:50,bottom:971,
-    outline:new Path2D('M383 50 C309 50 296 55 285 82 C270 112 238 127 201 144 L128 173 C101 193 80 226 65 269 L21 414 C42 433 124 457 160 456 L173 414 C184 544 173 749 154 944 L160 954 C210 973 543 979 608 955 L614 943 C595 759 584 549 594 412 L605 456 C641 459 720 435 745 415 L702 269 C687 227 668 194 641 176 L570 145 C530 127 500 111 483 82 C472 55 459 50 383 50 Z')}
+const approvedStripedPoloPhotos={
+  on:{image:new Image(),garmentHeight:1220},
+  arka:{image:new Image(),garmentHeight:1210}
 };
 function drawApprovedStripedPolo(p,face,col,size){
-  if(p!=='erkekSeritliPolo'||col!=='#ffffff'||!approvedStripedPoloPhoto.naturalWidth)return false;
-  const {left,top,bottom,outline}=approvedStripedPoloViews[face];
-  const halfWidth=approvedStripedPoloPhoto.naturalWidth/2;
-  const height=approvedStripedPoloPhoto.naturalHeight;
-  const scale=dims(p,size).B/(bottom-top);
+  if(p!=='erkekSeritliPolo'||col!=='#ffffff')return false;
+  const {image,garmentHeight}=approvedStripedPoloPhotos[face];
+  if(!image.naturalWidth)return false;
+  const scale=dims(p,size).B/garmentHeight;
+  const width=image.naturalWidth*scale,height=image.naturalHeight*scale;
   ctx.save();
-  ctx.translate(CX-halfWidth*scale/2,CY-(top+bottom)*scale/2);
-  ctx.scale(scale,scale);
-  ctx.clip(outline);
-  ctx.drawImage(approvedStripedPoloPhoto,left,0,halfWidth,height,0,0,halfWidth,height);
+  ctx.resetTransform();
+  ctx.fillStyle='#fafafa';
+  ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
   ctx.restore();
+  ctx.drawImage(image,CX-width/2,CY-height/2,width,height);
   return true;
 }
 function drawCanvasBack(p,format){
@@ -1801,11 +1798,15 @@ mensWhiteBackPhoto.onload=()=>{
   if(TEE_ASSETS[detailProduct])syncProductPage();
 };
 mensWhiteBackPhoto.src='assets/erkek-beyaz-detay-arka.webp';
-approvedStripedPoloPhoto.onload=()=>{
-  refreshTeeCards.erkekSeritliPolo();
-  if(detailProduct==='erkekSeritliPolo')syncProductPage();
-};
-approvedStripedPoloPhoto.src='assets/erkek-beyaz-seritli-polo-tam-boy.webp';
+for(const [face,{image}] of Object.entries(approvedStripedPoloPhotos)){
+  image.onload=()=>{
+    if(face==='on')refreshTeeCards.erkekSeritliPolo();
+    if(detailProduct==='erkekSeritliPolo'){
+      syncProductPage();
+    }
+  };
+  image.src='assets/erkek-beyaz-seritli-polo-'+face+'.jpeg';
+}
 for(const [name,shots] of Object.entries({'erkek-polo':mensPoloShots,'kadin-polo':womensPoloShots,'kadin-seritli-polo':womensStripedPoloShots})){
   const models=Object.keys(poloPhotoSets).filter(p=>poloPhotoSets[p]===shots);
   for(const [face,shot] of Object.entries(shots)){
