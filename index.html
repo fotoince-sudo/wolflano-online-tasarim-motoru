@@ -897,6 +897,8 @@ const PRODUCT_ROUTES={
   erkekPolo:'erkek-polo',kadinPolo:'kadin-polo',cocukPolo:'cocuk-polo'
 };
 let detailProduct=null;
+// Önizleme barındırıcısının kaynak sayfaya ayarladığı base URL'den bağımsız kalır.
+const productHref=hash=>new URL(hash,location.href).href;
 function productTitleFor(p){
   const item=PRODUCTS[p];
   return item.polo?item.name:item.shirt+' Standart Kesim Tişört';
@@ -970,7 +972,7 @@ function routeProduct(){
     $('productCatalog').hidden=!!detailProduct;
     $('productDetail').hidden=!detailProduct;
     $('productTitle').textContent=detailProduct?productTitleFor(detailProduct):'Ürün Seç';
-    $('productBack').href=detailProduct?'#urun-sec':'#studyo';
+    $('productBack').href=productHref(detailProduct?'#urun-sec':'#studyo');
     $('productBack').textContent=detailProduct?'Ürünlere dön':'Stüdyoya dön';
     if(detailProduct){
       productSizeOptions(detailProduct);
@@ -988,7 +990,7 @@ function routeProduct(){
 function buildProductPage(){
   Object.entries(PRODUCT_ROUTES).forEach(([p,slug])=>{
     const grid=$(PRODUCTS[p].polo?'poloProducts':'standardProducts');
-    const card=el('a',{className:'product-card',href:'#urun-sec/'+slug},grid);
+    const card=el('a',{className:'product-card',href:productHref('#urun-sec/'+slug)},grid);
     const canvas=el('canvas',{width:320,height:240},card);
     canvas.setAttribute('aria-hidden','true');
     thumb(canvas,p,'on','#ffffff','#e7ebe8');
