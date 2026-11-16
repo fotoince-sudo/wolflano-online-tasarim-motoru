@@ -675,7 +675,7 @@ const mensPoloShots={
 };
 function drawMensPoloPhoto(p,face,col,size){
   const shot=mensPoloShots[face],photo=shot?.photo;
-  if(!photo?.naturalWidth)return false;
+  if(!shot?.loaded)return false;
   const striped=PRODUCTS[p].striped;
   const key=`mens-polo|${face}|${col}|${striped}`;
   let texture=teeTextures.get(key);
@@ -1723,8 +1723,10 @@ mensWhiteBackPhoto.onload=()=>{
   if(TEE_ASSETS[detailProduct])syncProductPage();
 };
 mensWhiteBackPhoto.src='assets/erkek-beyaz-detay-arka.webp';
-for(const [face,{photo}] of Object.entries(mensPoloShots)){
+for(const [face,shot] of Object.entries(mensPoloShots)){
+  const {photo}=shot;
   photo.onload=()=>{
+    shot.loaded=true;
     if(face==='on'){
       refreshTeeCards.erkekPolo();
       refreshTeeCards.erkekSeritliPolo();
