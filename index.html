@@ -631,8 +631,9 @@ function drawMensTeePhoto(col,garmentSize){
     CX-width/2,CY-B/2,width,B);
   return true;
 }
-function drawGarment(p,v,col,garmentSize=garmentSizes[p]){
-  if(p==='tisort'&&v==='on'&&drawMensTeePhoto(col,garmentSize))return;
+function drawGarment(p,v,col,garmentSize=garmentSizes[p],usePhoto=false){
+  const brandedFront=p==='tisort'&&v==='on';
+  if(brandedFront&&usePhoto&&drawMensTeePhoto(col,garmentSize))return;
   const {e,b,sl,B}=dims(p,garmentSize),t=CY-B/2,front=v==='on',X=CX,shirt=PRODUCTS[p].shirt;
   const nd=neckDepth(p,v),hn=(isYouth(p)?7.4:8.5)+(e-45.7)*0.08,tipX=e/2+1,tipY=4,ay=shirt?0.33*b:0.32*b;
   const P=(x,y)=>[X+x*S,t+y*S],pt=(x,y)=>ctx.lineTo(...P(x,y)),mv=(x,y)=>ctx.moveTo(...P(x,y));
@@ -640,12 +641,21 @@ function drawGarment(p,v,col,garmentSize=garmentSizes[p]){
   let out;                                    // kol ucu (dış nokta)
   if(shirt){out=[tipX+slv*Math.cos(50*r),tipY+slv*Math.sin(50*r)]}
   else{out=[tipX+slv*Math.cos(78*r),tipY+slv*Math.sin(78*r)]}
+  if(brandedFront)out[0]=Math.min(out[0],(CX-RULER_INSET-4)/S);
   const cw=11,inn=[out[0]-cw*Math.sin(78*r),out[1]+cw*Math.cos(78*r)];
   if(p==='hoodie'){
     ctx.beginPath();ctx.ellipse(...P(0,front?0:3),(hn+6)*S,(front?4:7)*S,0,0,7);
     ctx.fillStyle=shade(col,-14);ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.fill();ctx.stroke();
   }
   const neck=()=>{mv(-hn,0);ctx.quadraticCurveTo(...P(0,nd*2),...P(hn,0))};
+  if(brandedFront){
+    ctx.beginPath();neck();ctx.quadraticCurveTo(...P(0,2),...P(-hn,0));ctx.closePath();
+    ctx.fillStyle=shade(col,-24);ctx.fill();
+    const [labelX,labelY]=P(-3,2.1);
+    ctx.fillStyle='#141414';ctx.fillRect(labelX,labelY,6*S,1.75*S);
+    ctx.save();ctx.fillStyle='#fff';ctx.font=`bold ${.98*S}px sans-serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('wolflano',...P(0,3));ctx.restore();
+  }
   ctx.beginPath();neck();pt(tipX,tipY);pt(out[0],out[1]);
   if(shirt){pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-out[0],out[1])}
   else{pt(inn[0],inn[1]);pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-inn[0],inn[1]);pt(-out[0],out[1])}
@@ -1064,7 +1074,7 @@ function productPreview(canvas,p,face,selectedColor,selectedSize,format){
   ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
   ctx.fillStyle='#e6e6ef';
   ctx.fillRect(0,0,W,W);
-  if(isGiyim(p))drawGarment(p,face,selectedColor,selectedSize);
+  if(isGiyim(p))drawGarment(p,face,selectedColor,selectedSize,true);
   else {
     const scale=PRODUCTS[p].tz;
     ctx.translate(CX*(1-scale),CY*(1-scale));ctx.scale(scale,scale);
@@ -1084,7 +1094,7 @@ function syncProductPage(){
   const photo=$('productPhoto'),front=$('shirtFront'),mug=item.kind==='kupa';
   $('productPhotoFrame').hidden=!mug;
   front.hidden=mug;
-  $('productFrontCaption').textContent=mug?'Ürün görünümü':'Ön';
+  $('productFrontCaption').textContent=mug?'Ürün görünümü':p==='tisort'?'Ön ürün fotoğrafı':'Ön';
   if(mug){
     const choice=item.colors.find(([,hex])=>hex===selectedColor)??item.colors[0];
     setMugPhoto(photo,choice[2],item.trim?`${choice[0]} iç yüzeyli ve kulplu kupa`:item.name);
@@ -1220,7 +1230,7 @@ function buildMensTeeCard(grid,slug){
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
-    drawGarment('tisort','on',colorSelect.value,sizeSelect.value);
+    drawGarment('tisort','on',colorSelect.value,sizeSelect.value,true);
     ctx=previous;
   };
   controls.onchange=()=>{
@@ -1439,7 +1449,6 @@ buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProd
 mensTeePhoto.onload=()=>{
   refreshMensTeeCard();
   if(detailProduct==='tisort'&&!$('productDetail').hidden)syncProductPage();
-  if(product==='tisort')draw();
 };
 mensTeePhoto.src='assets/erkek-tisort-on.webp';
 window.addEventListener('resize',()=>{if(zoom>100)setZoom(zoom)});
