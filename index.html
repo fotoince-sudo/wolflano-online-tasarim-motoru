@@ -1284,6 +1284,25 @@ function drawWhiteTeeReference(p,face,size){
   ctx.restore();
   return true;
 }
+const approvedStripedPoloPhoto=new Image();
+const approvedStripedPoloViews={
+  on:{left:0,width:1085,top:76,bottom:655,
+    outline:new Path2D('M544 76 C450 76 438 74 426 99 C416 121 402 139 374 159 C329 185 260 209 206 232 C157 251 143 285 120 321 C88 384 61 471 38 532 L28 577 C42 593 165 629 224 636 C231 635 235 622 240 600 L249 655 H833 L840 600 C847 618 847 635 856 636 C909 631 1037 594 1057 577 L1048 535 C1024 472 994 382 963 321 C941 285 925 252 876 232 C819 208 751 185 713 159 C686 141 670 119 660 99 C648 74 636 76 544 76 Z')},
+  arka:{left:1085,width:1084,top:70,bottom:655,
+    outline:new Path2D('M541 70 C452 70 434 72 419 96 C410 117 398 133 381 145 C325 174 255 202 196 230 C149 249 135 283 112 321 C79 384 55 471 36 534 L26 567 C48 588 145 616 222 625 C233 622 235 604 241 582 L254 655 H829 L842 582 C849 608 849 624 861 625 C929 615 1039 587 1056 566 L1047 534 C1029 471 1002 383 969 322 C947 284 931 250 883 229 C822 200 749 172 702 145 C683 131 672 118 662 96 C647 71 629 70 541 70 Z')}
+};
+function drawApprovedStripedPolo(p,face,col,size){
+  if(p!=='erkekSeritliPolo'||col!=='#ffffff'||!approvedStripedPoloPhoto.complete||!approvedStripedPoloPhoto.naturalWidth)return false;
+  const {left,width,top,bottom,outline}=approvedStripedPoloViews[face];
+  const scale=dims(p,size).B/1050;
+  ctx.save();
+  ctx.translate(CX-width*scale/2,CY-(top+bottom)*scale/2);
+  ctx.scale(scale,scale);
+  ctx.clip(outline);
+  ctx.drawImage(approvedStripedPoloPhoto,left,0,width,725,0,0,width,725);
+  ctx.restore();
+  return true;
+}
 function drawCanvasBack(p,format){
   const {x,y,w,h}=getArea(p,'arka',undefined,format),edge=PRODUCTS[p].bleed*S;
   ctx.beginPath();
@@ -1303,6 +1322,10 @@ function productPreview(canvas,p,face,selectedColor,selectedSize,format,showPrin
   ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
   ctx.fillStyle=PRODUCT_PREVIEW_BACKGROUND;
   ctx.fillRect(0,0,W,W);
+  if(drawApprovedStripedPolo(p,face,selectedColor,selectedSize)){
+    ctx=prev;
+    return;
+  }
   const reference=usesWhiteTeeReference(p,selectedColor)&&drawWhiteTeeReference(p,face,selectedSize);
   if(!reference&&isGiyim(p))drawGarment(p,face,selectedColor,selectedSize);
   if(!isGiyim(p)){
@@ -1545,7 +1568,8 @@ function buildTeeCard(grid,p,slug){
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
-    if(!(usesWhiteTeeReference(p,colorSelect.value)&&drawWhiteTeeReference(p,'on',sizeSelect.value))){
+    const colorValue=colorSelect.value,sizeValue=sizeSelect.value;
+    if(!drawApprovedStripedPolo(p,'on',colorValue,sizeValue)&&!(usesWhiteTeeReference(p,colorValue)&&drawWhiteTeeReference(p,'on',sizeValue))){
       drawGarment(p,'on',colorSelect.value,sizeSelect.value);
     }
     ctx=previous;
@@ -1773,6 +1797,11 @@ mensWhiteBackPhoto.onload=()=>{
   if(TEE_ASSETS[detailProduct])syncProductPage();
 };
 mensWhiteBackPhoto.src='assets/erkek-beyaz-detay-arka.webp';
+approvedStripedPoloPhoto.onload=()=>{
+  refreshTeeCards.erkekSeritliPolo();
+  if(detailProduct==='erkekSeritliPolo')syncProductPage();
+};
+approvedStripedPoloPhoto.src='assets/erkek-beyaz-seritli-polo-onayli.webp';
 for(const [name,shots] of Object.entries({'erkek-polo':mensPoloShots,'kadin-polo':womensPoloShots,'kadin-seritli-polo':womensStripedPoloShots})){
   const models=Object.keys(poloPhotoSets).filter(p=>poloPhotoSets[p]===shots);
   for(const [face,shot] of Object.entries(shots)){
