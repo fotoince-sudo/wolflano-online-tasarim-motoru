@@ -382,10 +382,12 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <p class="product-measure" id="productMeasurements" aria-live="polite"></p>
       </section>
       <form class="product-form" id="productForm">
+        <fieldset><legend>Tişört modeli</legend><div class="product-choices" id="productModels"></div></fieldset>
         <fieldset><legend>Renk</legend><div class="product-choices" id="productColors"></div></fieldset>
         <fieldset><legend>Beden</legend><div class="product-choices" id="productSizes"></div></fieldset>
         <label for="productPrint" class="product-print-label">Baskı alanı</label>
         <select id="productPrint" name="format"></select>
+        <p class="hint" id="productPrintHint" hidden>A3 dikey baskı bu bedene sığmıyor.</p>
         <button type="submit" class="btn pr">Tasarlamaya başla</button>
       </form>
     </div>
@@ -411,11 +413,18 @@ function el(t,p={},parent){const e=Object.assign(document.createElement(t),p);pa
 // Gildan resmi ölçü tabloları (inç → cm): [göğüs eni, boy, merkez arka yakadan kol hizası]
 const IN=2.54, SIZES=['S','M','L','XL','2XL','3XL','4XL','5XL'];
 const CHEST=[18,20,22,24,26,28,30,32];
-function mk(len,slv){const o={};SIZES.forEach((s,i)=>o[s]=[CHEST[i]*IN,len[i]*IN,slv[i]*IN]);return o}
+function mk(len,slv,widths=CHEST,sizes=SIZES){
+  return Object.fromEntries(sizes.map((s,i)=>[s,[
+    widths[i]*IN,len[i]*IN,(slv?.[i]??(widths[i]/2+len[i]*.19))*IN
+  ]]));
+}
 const OLCU_TISORT=mk([28,29,30,31,32,33,34,35],[15.625,17,18.5,20,21.5,22.375,23.625,25]);   // Gildan 5000
 const OLCU_UZUN=mk([27,28,29,30,31,32,33,34],[33,34,35,36,37,38,39,40]);                    // Gildan 18500 (sweatshirt için de kullanıldı)
-const OLCU={tisort:OLCU_TISORT,sweat:OLCU_UZUN,hoodie:OLCU_UZUN};
-const BEDEN=OLCU_TISORT;
+// BELLA+CANVAS 6400 göğüs ve boy ölçüleri. Kol çizimi şematiktir.
+const OLCU_KADIN=mk([25.25,26,26.75,27.5,28.25,29],null,[18.5,20,22,24,26,28],SIZES.slice(0,6));
+// Gildan 5000B çocuk tişörtü ölçü tablosu.
+const OLCU_COCUK=mk([20.5,22,23.5,25,26.5],[13.5,14.5,15.5,16.5,17.5],[16,17,18,19,20],['XS','S','M','L','XL']);
+const OLCU={tisort:OLCU_TISORT,kadinTisort:OLCU_KADIN,cocukTisort:OLCU_COCUK,sweat:OLCU_UZUN,hoodie:OLCU_UZUN};
 const GIYIM_BASKI=[
   {n:'A4 dikey 21×29,7 cm',short:'A4',w:21,h:29.7},
   {n:'A4 yatay 29,7×21 cm',short:'A4',w:29.7,h:21},
@@ -423,7 +432,9 @@ const GIYIM_BASKI=[
   {n:'Logo 8×8 cm (sol göğüs)',short:'8×8',w:8,h:8,logo:true}
 ];
 const PRODUCTS={
-  tisort:{name:'Tişört',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
+  tisort:{name:'Tişört',shirt:'Erkek',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
+  kadinTisort:{name:'Kadın Standart Kesim Tişört',shirt:'Kadın',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
+  cocukTisort:{name:'Çocuk Standart Kesim Tişört',shirt:'Çocuk',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
   sweat:{name:'Sweatshirt',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
   hoodie:{name:'Hoodie',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
   sapka:{name:'Şapka',kind:'sapka',sizes:[{n:'Şapka 20×8 cm',w:20,h:8}],def:0,tz:2.6,zoom:250},
@@ -449,7 +460,8 @@ const PRESETS=[
 ];
 
 // ---- durum
-let product='tisort', view='on', color='#ffffff', colorName='Beyaz', beden='L', zoom=100, showArea=true;
+let product='tisort', view='on', color='#ffffff', colorName='Beyaz', zoom=100, showArea=true;
+const garmentSizes=Object.fromEntries(Object.keys(OLCU).map(p=>[p,p==='cocukTisort'?'M':'L']));
 const sizeIdx={}; Object.keys(PRODUCTS).forEach(k=>sizeIdx[k]=PRODUCTS[k].def);
 let designs={}, bgs={}, sel=null;
 const key=(p=product,v=view)=>p+'|'+v;
@@ -458,30 +470,43 @@ const isGiyim=(p=product)=>PRODUCTS[p].kind==='giyim';
 
 function shade(hex,amt){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,v+amt));return `rgb(${f(n>>16)},${f((n>>8)&255)},${f(n&255)})`}
 const curSize=(p=product)=>PRODUCTS[p].sizes[sizeIdx[p]];
-function dims(p=product,garmentSize=beden){const [e,b,sl]=OLCU[p][garmentSize];return{e,b,sl,E:e*S,B:b*S}}
+function dims(p=product,garmentSize=garmentSizes[p]){const [e,b,sl]=OLCU[p][garmentSize];return{e,b,sl,E:e*S,B:b*S}}
 const NECK_FRONT=7.6, NECK_BACK=2; // yaka derinliği (cm)
+function neckDepth(p,face){
+  if(p==='cocukTisort')return face==='on'?6:1.8;
+  return face==='on'?NECK_FRONT:NECK_BACK;
+}
 const BACK_PRINT_FROM_NECK=8;
-function getArea(p=product,v=view,garmentSize=beden,cm=curSize(p)){
+function getArea(p=product,v=view,garmentSize=garmentSizes[p],cm=curSize(p)){
   const w=cm.w*S,h=cm.h*S;
   if(isGiyim(p)){
     const {B}=dims(p,garmentSize),t=CY-B/2;
     // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 13 cm sağda (giyenin solu)
     const dx=cm.logo&&v==="on"?13*S:0;
-    const top=t+(v==='on'?(NECK_FRONT+(cm.logo?8.9:6.4)):(NECK_BACK+BACK_PRINT_FROM_NECK))*S;
+    const top=t+(neckDepth(p,v)+(v==='on'?(cm.logo?8.9:6.4):BACK_PRINT_FROM_NECK))*S;
     return{x:CX+dx-w/2,y:top,w,h,cm};
   }
   return{x:CX-w/2,y:CY-h/2,w,h,cm};
 }
+function printChoices(p,garmentSize=garmentSizes[p]){
+  const formats=PRODUCTS[p].sizes.map((format,index)=>({format,index}));
+  if(!PRODUCTS[p].shirt)return formats;
+  const {E,B}=dims(p,garmentSize);
+  return formats.filter(({format})=>['on','arka'].every(face=>{
+    const area=getArea(p,face,garmentSize,format);
+    return area.x>=CX-E/2&&area.x+area.w<=CX+E/2&&area.y+area.h<=CY+B/2;
+  }));
+}
 
 // ---- ürün çizimi (duvar koordinatlarında)
 function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
-function drawGarment(p,v,col,garmentSize=beden){
-  const {e,b,sl,B}=dims(p,garmentSize),t=CY-B/2,front=v==='on',X=CX;
-  const nd=front?NECK_FRONT:NECK_BACK,hn=8.5+(e-45.7)*0.08,tipX=e/2+1,tipY=4,ay=p==='tisort'?0.33*b:0.32*b;
+function drawGarment(p,v,col,garmentSize=garmentSizes[p]){
+  const {e,b,sl,B}=dims(p,garmentSize),t=CY-B/2,front=v==='on',X=CX,shirt=PRODUCTS[p].shirt;
+  const nd=neckDepth(p,v),hn=(p==='cocukTisort'?7.4:8.5)+(e-45.7)*0.08,tipX=e/2+1,tipY=4,ay=shirt?0.33*b:0.32*b;
   const P=(x,y)=>[X+x*S,t+y*S],pt=(x,y)=>ctx.lineTo(...P(x,y)),mv=(x,y)=>ctx.moveTo(...P(x,y));
   const dist=Math.hypot(tipX,tipY),slv=Math.max(sl-dist,8),r=Math.PI/180;
   let out;                                    // kol ucu (dış nokta)
-  if(p==='tisort'){out=[tipX+slv*Math.cos(50*r),tipY+slv*Math.sin(50*r)]}
+  if(shirt){out=[tipX+slv*Math.cos(50*r),tipY+slv*Math.sin(50*r)]}
   else{out=[tipX+slv*Math.cos(78*r),tipY+slv*Math.sin(78*r)]}
   const cw=11,inn=[out[0]-cw*Math.sin(78*r),out[1]+cw*Math.cos(78*r)];
   if(p==='hoodie'){
@@ -490,11 +515,11 @@ function drawGarment(p,v,col,garmentSize=beden){
   }
   const neck=()=>{mv(-hn,0);ctx.quadraticCurveTo(...P(0,nd*2),...P(hn,0))};
   ctx.beginPath();neck();pt(tipX,tipY);pt(out[0],out[1]);
-  if(p==='tisort'){pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-out[0],out[1])}
+  if(shirt){pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-out[0],out[1])}
   else{pt(inn[0],inn[1]);pt(e/2,ay);pt(e/2,b);pt(-e/2,b);pt(-e/2,ay);pt(-inn[0],inn[1]);pt(-out[0],out[1])}
   pt(-tipX,tipY);ctx.closePath();fillStroke(col);
   ctx.strokeStyle=shade(col,-22);ctx.lineWidth=p==='hoodie'?4:7;ctx.beginPath();neck();ctx.stroke(); // yaka bandı
-  if(p!=='tisort'){ // bel ve manşet lastikleri (6 cm)
+  if(!shirt){ // bel ve manşet lastikleri (6 cm)
     ctx.fillStyle=shade(col,-12);ctx.strokeStyle=shade(col,-55);ctx.lineWidth=1.5;
     ctx.fillRect(X-e/2*S,t+(b-6)*S,e*S,6*S);ctx.strokeRect(X-e/2*S,t+(b-6)*S,e*S,6*S);
     const ux=Math.cos(78*r)*6,uy=Math.sin(78*r)*6;
@@ -794,25 +819,40 @@ function productChoice(parent,name,value,label,swatch){
   }
   caption.append(label);
 }
-function productPreview(canvas,face,selectedColor,selectedSize,format){
+function productPreview(canvas,p,face,selectedColor,selectedSize,format){
   const prev=ctx;
   ctx=canvas.getContext('2d');
   ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
   ctx.fillStyle='#e6e6ef';
   ctx.fillRect(0,0,W,W);
-  drawGarment('tisort',face,selectedColor,selectedSize);
-  drawPrintArea(getArea('tisort',face,selectedSize,format),selectedColor,3.5);
+  drawGarment(p,face,selectedColor,selectedSize);
+  drawPrintArea(getArea(p,face,selectedSize,format),selectedColor,3.5);
   ctx=prev;
 }
 function syncProductPage(){
-  const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
-  const {e,b}=dims('tisort',shirtSize.value),format=GIYIM_BASKI[printFormat.value];
-  productPreview($('shirtFront'),'on',shirtColor.value,shirtSize.value,format);
-  productPreview($('shirtBack'),'arka',shirtColor.value,shirtSize.value,format);
+  const {model,beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
+  const p=model.value,{e,b}=dims(p,shirtSize.value),format=PRODUCTS[p].sizes[printFormat.value];
+  $('productModelTitle').textContent=PRODUCTS[p].shirt+' Standart Kesim Tişört';
+  productPreview($('shirtFront'),p,'on',shirtColor.value,shirtSize.value,format);
+  productPreview($('shirtBack'),p,'arka',shirtColor.value,shirtSize.value,format);
   $('productMeasurements').innerHTML=
     `<span>Göğüs eni <strong>${cmText.format(e)} cm</strong></span>`+
     `<span>Boy <strong>${cmText.format(b)} cm</strong></span>`+
     `<span>Baskı <strong>${cmText.format(format.w)} × ${cmText.format(format.h)} cm</strong></span>`;
+}
+function productPrintOptions(p,size,preferred){
+  const choices=printChoices(p,size),select=$('productPrint');
+  select.replaceChildren();
+  choices.forEach(({format,index})=>el('option',{value:index,textContent:format.n},select));
+  select.value=choices.some(({index})=>index===preferred)?preferred:choices[0].index;
+  $('productPrintHint').hidden=choices.length===PRODUCTS[p].sizes.length;
+}
+function productSizeOptions(p){
+  const options=$('productSizes');
+  options.replaceChildren();
+  Object.keys(OLCU[p]).forEach(size=>productChoice(options,'beden',size,size));
+  productForm.elements.beden.value=garmentSizes[p];
+  productPrintOptions(p,garmentSizes[p],sizeIdx[p]);
 }
 function routeProduct(){
   const opening=location.hash==='#urun-sec',page=$('productPage');
@@ -821,9 +861,10 @@ function routeProduct(){
   page.hidden=!opening;
   if(opening){
     setFly('');
-    productForm.elements.beden.value=beden;
+    const p=PRODUCTS[product].shirt?product:'tisort';
+    productForm.elements.model.value=p;
+    productSizeOptions(p);
     productForm.elements.renk.value=color;
-    productForm.elements.format.value=sizeIdx.tisort;
     syncProductPage();
     $('productTitle').focus({preventScroll:true});
   }else{
@@ -833,18 +874,25 @@ function routeProduct(){
   window.scrollTo(0,0);
 }
 function buildProductPage(){
+  Object.entries(PRODUCTS).forEach(([p,item])=>{
+    if(item.shirt)productChoice($('productModels'),'model',p,item.shirt);
+  });
   COLORS.forEach(([name,hex])=>productChoice($('productColors'),'renk',hex,name,hex));
-  SIZES.forEach(size=>productChoice($('productSizes'),'beden',size,size));
-  GIYIM_BASKI.forEach(({n},index)=>el('option',{value:index,textContent:n},$('productPrint')));
-  productForm.onchange=syncProductPage;
+  productForm.onchange=event=>{
+    const {model,beden:shirtSize,format}=productForm.elements;
+    if(event.target.name==='model')productSizeOptions(model.value);
+    if(event.target.name==='beden')productPrintOptions(model.value,shirtSize.value,+format.value);
+    syncProductPage();
+  };
   productForm.onsubmit=event=>{
     event.preventDefault();
-    const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
-    reflow(()=>{beden=shirtSize.value;sizeIdx.tisort=+printFormat.value},'tisort');
+    const {model,beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
+    const p=model.value;
+    reflow(()=>{garmentSizes[p]=shirtSize.value;sizeIdx[p]=+printFormat.value},p);
     color=shirtColor.value;colorName=COLORS.find(([,hex])=>hex===color)[0];
-    if(product!=='tisort'){
-      product='tisort';view='on';buildPrintFormats();
-    }
+    if(product!==p)view='on';
+    product=p;
+    buildPrintFormats();
     sel=null;
     location.hash='';
   };
@@ -860,19 +908,28 @@ function buildStatic(){
       buildPrintFormats();syncUI();draw();setZoom(zoom,true);
     };
   });
-  SIZES.forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
-    b.onclick=()=>{reflow(()=>beden=s);syncUI();draw()}});
+  ['XS',...SIZES].forEach(s=>{const b=el('button',{textContent:s},$('bedens'));b.dataset.b=s;
+    b.onclick=()=>{
+      if(!OLCU[product]?.[s])return;
+      const choices=printChoices(product,s);
+      reflow(()=>{
+        garmentSizes[product]=s;
+        if(!choices.some(({index})=>index===sizeIdx[product]))sizeIdx[product]=choices[0].index;
+      });
+      buildPrintFormats();syncUI();draw();
+    }});
   [['on','Ön'],['arka','Arka']].forEach(([v,n])=>{const b=el('button',{type:'button'},$('views'));b.dataset.v=v;
     const thumbnail=el('canvas',{width:200,height:200},b);thumbnail.setAttribute('aria-hidden','true');b.append(n);
     b.onclick=()=>{view=v;sel=null;syncUI();draw()}});
 }
 function buildPrintFormats(){
-  const group=$('printFormats'),sizes=PRODUCTS[product].sizes;
+  const group=$('printFormats'),sizes=printChoices(product);
   group.replaceChildren();
   group.hidden=sizes.length<2;
   if(group.hidden)return;
-  sizes.forEach(({n,short,w,h},index)=>{
+  sizes.forEach(({format:{n,short,w,h},index})=>{
     const button=el('button',{type:'button',className:'format-button',title:n},group);
+    button.dataset.index=index;
     button.setAttribute('aria-label',n);
     const orientation=w===h?'square':w>h?'landscape':'portrait';
     const glyph=el('span',{className:'format-glyph '+orientation},button);
@@ -902,14 +959,14 @@ function syncSel(){
   const cm=Math.round(toCm(sel)*2)/2;$('pScale').value=cm;$('sizeLbl').textContent=cm+' cm';$('pRot').value=sel.rot;
 }
 function syncUI(){
-  const P=PRODUCTS[product],g=isGiyim();
+  const P=PRODUCTS[product],g=isGiyim(),beden=garmentSizes[product];
   document.querySelectorAll('#prods button').forEach(b=>{b.classList.toggle('on',b.dataset.k===product);thumb(b.firstChild,b.dataset.k,'on',color,'#dcdce6')});
   document.querySelectorAll('#bedens button').forEach(b=>b.classList.toggle('on',b.dataset.b===beden));
   $('bedenBox').style.display=g?'block':'none';$('views').hidden=!g;
-  [...$('printFormats').children].forEach((button,index)=>button.setAttribute('aria-pressed',String(index===sizeIdx[product])));
-  const [e,b]=OLCU[isGiyim()?product:'tisort'][beden],cm=curSize(),f1=x=>(Math.round(x*10)/10).toString().replace('.',','),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
+  [...$('printFormats').children].forEach(button=>button.setAttribute('aria-pressed',String(+button.dataset.index===sizeIdx[product])));
+  const [e,b]=OLCU[product]?.[beden]||[],cm=curSize(),f1=x=>(Math.round(x*10)/10).toString().replace('.',','),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
   let info;
-  if(g)info=`${tee}<div><b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${f1(e)} cm</span><span>Boy: ${f1(b)} cm</span></div>`;
+  if(g)info=`${tee}<div>${P.shirt&&product!=='tisort'?`<div>${P.name}</div>`:''}<b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${f1(e)} cm</span><span>Boy: ${f1(b)} cm</span></div>`;
   else if(P.kind==='kanvas')info=`<div><b>Kanvas Ölçüleri</b><span>Ön yüz: ${(cm.w-7.5).toString().replace('.',',')}×${(cm.h-7.5).toString().replace('.',',')} cm</span><span>Katlama payı: 3,75 cm</span></div>`;
   else info=`<div><b>${P.name} Ölçüleri</b><span>Baskı alanı: ${cm.w}×${cm.h} cm</span></div>`;
   $('info').innerHTML=info;$('info2').innerHTML=info;
@@ -959,7 +1016,7 @@ $('dlgClose').onclick=()=>$('dlg').close();
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)}
 $('cart').onclick=()=>{
   const vs=viewsWithDesign();if(!vs.length){toast('Önce bir tasarım ekleyin');return}
-  const detail={urun:PRODUCTS[product].name,renk:colorName,beden:isGiyim()?beden:null,baski:curSize().n,gorunumler:{}};
+  const detail={urun:PRODUCTS[product].name,renk:colorName,beden:garmentSizes[product]||null,baski:curSize().n,gorunumler:{}};
   vs.forEach(v=>{detail.gorunumler[v]={onizleme:customerPreview(v).toDataURL('image/jpeg',.72)}});
   try{const l=JSON.parse(localStorage.getItem('wolflano_sepet')||'[]');l.push(detail);localStorage.setItem('wolflano_sepet',JSON.stringify(l.slice(-3)))}catch(e){}
   window.dispatchEvent(new CustomEvent('wolflano:sepete-ekle',{detail}));
