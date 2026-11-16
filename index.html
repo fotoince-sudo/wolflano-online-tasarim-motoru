@@ -250,6 +250,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .ctx #sel .r input[type=color]{flex:none}
   .selection-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
   .ctx #sel .sl{display:none}
+  .ctx #sel.canvas-image .scale-control{display:flex;grid-column:1/-1;margin:4px 0}
   .ctx #sel #selColor{grid-column:1/-1}
   .selection-actions .sm{padding:8px 2px;font-size:13px}
   #f-text #sel .sl{display:none}
@@ -317,7 +318,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
           <option>Courier New</option><option>Comic Sans MS</option><option>Brush Script MT</option>
         </select>
         <div class="r" id="selColor"><label>Renk</label><input type="color" id="pColor" value="#000000"></div>
-        <div class="r sl"><label id="sizeLbl">Boyut</label><input type="range" id="pScale" min="1" max="60" step="0.5"></div>
+        <div class="r sl scale-control"><label id="sizeLbl" for="pScale">Boyut</label><input type="range" id="pScale" aria-label="Genişlik (cm)" min="1" max="60" step="0.5"></div>
         <div class="r sl"><label>Döndür</label><input type="range" id="pRot" min="-180" max="180"></div>
       </div></div>
   <div class="selection-actions" role="group" aria-label="Seçili nesne işlemleri">
@@ -1018,21 +1019,43 @@ function drawDesign(p,v){
 // c: hedef canvas. o.ui=true → kılavuzlar/seçim çizilir
 const HOFF=12;let snapV=false,snapH=false;
 const uPx=()=>W/cv.getBoundingClientRect().width;
+function selectionHandles(it,p=product){
+  const {w,h}=itemSize(it),u=uPx(),offset=HOFF*u,angle=it.rot*Math.PI/180;
+  const cos=Math.cos(angle),sin=Math.sin(angle);
+  const keepVisible=PRODUCTS[p].kind==='kanvas'&&it.type==='image';
+  const margin=17*u;
+  const clamp=coordinate=>keepVisible?Math.max(margin,Math.min(W-margin,coordinate)):coordinate;
+  const corner=y=>({
+    x:clamp(it.x+(w/2+offset)*cos-y*sin),
+    y:clamp(it.y+(w/2+offset)*sin+y*cos)
+  });
+  return {rot:corner(h/2+offset),scale:corner(-h/2-offset)};
+}
 function render(c,o={}){
   const p=o.p||product,v=o.v||view,prev=ctx;ctx=c.getContext('2d');ctx.setTransform(c.width/W,0,0,c.width/W,0,0);
-  drawWall();drawProduct(p,v,color);drawDesign(p,v);
+  const flatMug=o.ui&&PRODUCTS[p].kind==='kupa';
+  drawWall();
+  if(flatMug){
+    const {x,y,w,h}=getArea(p,v);
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(x,y,w,h);
+  }else drawProduct(p,v,color);
+  drawDesign(p,v);
   if(o.ui){
     drawGuides();
     if(showArea)areaSlots(p,v).forEach(slot=>{
       const active=!slot||slot===poloChest;
       ctx.save();ctx.globalAlpha=active?1:.48;
-      drawPrintArea(getArea(p,v,undefined,undefined,slot),color,active?2.6:1.8);
+      drawPrintArea(getArea(p,v,undefined,undefined,slot),flatMug?'#ffffff':color,active?2.6:1.8);
       ctx.restore();
     });
-    if(sel){const {w,h}=itemSize(sel),u=uPx();ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5*u;ctx.strokeRect(-w/2,-h/2,w,h);
-      const dot=(x,y,fn)=>{ctx.save();ctx.translate(x,y);ctx.scale(u,u);ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();fn();ctx.restore()};
-      dot(w/2+HOFF*u,h/2+HOFF*u,()=>{ctx.beginPath();ctx.arc(0,0,7,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(4.5,-8);ctx.lineTo(9,-3);ctx.lineTo(2.5,-2.5);ctx.fillStyle='#2f6fed';ctx.fill()});
-      dot(w/2+HOFF*u,-h/2-HOFF*u,()=>{ctx.beginPath();ctx.moveTo(-6,6);ctx.lineTo(6,-6);ctx.moveTo(1,-6);ctx.lineTo(6,-6);ctx.lineTo(6,-1);ctx.moveTo(-1,6);ctx.lineTo(-6,6);ctx.lineTo(-6,1);ctx.stroke()});
+    if(sel){
+      const {w,h}=itemSize(sel),u=uPx(),handles=selectionHandles(sel,p);
+      ctx.save();ctx.strokeStyle='#2f6fed';ctx.lineWidth=1.5*u;
+      ctx.save();ctx.translate(sel.x,sel.y);ctx.rotate(sel.rot*Math.PI/180);ctx.strokeRect(-w/2,-h/2,w,h);ctx.restore();
+      const dot=({x,y},fn)=>{ctx.save();ctx.translate(x,y);ctx.rotate(sel.rot*Math.PI/180);ctx.scale(u,u);ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,0,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.stroke();fn();ctx.restore()};
+      dot(handles.rot,()=>{ctx.beginPath();ctx.arc(0,0,7,.6,5.4);ctx.stroke();ctx.beginPath();ctx.moveTo(4.5,-8);ctx.lineTo(9,-3);ctx.lineTo(2.5,-2.5);ctx.fillStyle='#2f6fed';ctx.fill()});
+      dot(handles.scale,()=>{ctx.beginPath();ctx.moveTo(-6,6);ctx.lineTo(6,-6);ctx.moveTo(1,-6);ctx.lineTo(6,-6);ctx.lineTo(6,-1);ctx.moveTo(-1,6);ctx.lineTo(-6,6);ctx.lineTo(-6,1);ctx.stroke()});
       ctx.restore();
       if(snapV||snapH){const A=getArea(p,v);ctx.save();ctx.strokeStyle='#ff3da0';ctx.lineWidth=1.5*u;ctx.beginPath();if(snapV){ctx.moveTo(A.x+A.w/2,A.y-20);ctx.lineTo(A.x+A.w/2,A.y+A.h+20)}if(snapH){ctx.moveTo(A.x-20,A.y+A.h/2);ctx.lineTo(A.x+A.w+20,A.y+A.h/2)}ctx.stroke();ctx.restore()}
     }
@@ -1133,6 +1156,17 @@ $('bgDel').onclick=()=>{delete bgs[key()];commit();draw()};
 // ---- seçili öğe paneli (boyut cm cinsinden)
 const toCm=it=>it.type==='text'?it.size/S:it.type==='image'?it.img.width*it.s/S:it.size/S;
 function fromCm(it,cm){if(it.type==='text')it.size=cm*S;else if(it.type==='image')it.s=cm*S/it.img.width;else it.size=cm*S}
+function maxWidthCm(it){
+  if(PRODUCTS[product].kind!=='kanvas'||it.type!=='image')return 60;
+  const {w,h}=curSize();
+  // Use the full wrap area and allow even very wide photos to cover its short side.
+  return Math.ceil(Math.hypot(w,h)*2*Math.max(1,it.img.width/it.img.height));
+}
+function syncWidth(){
+  const cm=Math.round(toCm(sel)*2)/2;
+  $('pScale').value=cm;
+  $('sizeLbl').textContent=cm+' cm';
+}
 $('pFont').onchange=e=>{sel.font=e.target.value;commit();draw()};
 $('pColor').oninput=e=>{sel.fill=e.target.value;draw()};
 $('pRot').oninput=e=>{sel.rot=+e.target.value;draw()};
@@ -1157,9 +1191,11 @@ function hit(it,p,pad=0){
 }
 let drag=null,moved=false;
 function handleHit(p){
-  if(!sel)return null;const {w,h}=itemSize(sel),a=sel.rot*Math.PI/180,c=Math.cos(a),n=Math.sin(a),u=uPx(),o=HOFF*u;
-  const at=(x,y)=>({x:sel.x+x*c-y*n,y:sel.y+x*n+y*c}),near=q=>Math.hypot(p.x-q.x,p.y-q.y)<=26*u;
-  if(near(at(w/2+o,h/2+o)))return'rot';if(near(at(w/2+o,-h/2-o)))return'scale';return null;
+  if(!sel)return null;
+  const {rot,scale}=selectionHandles(sel),u=uPx();
+  const ds=Math.hypot(p.x-scale.x,p.y-scale.y),dr=Math.hypot(p.x-rot.x,p.y-rot.y);
+  if(Math.min(ds,dr)>26*u)return null;
+  return ds<=dr?'scale':'rot';
 }
 const ptrs=new Map();let gest=null,ignore=false;
 const vpEl=$('vp'),mid=()=>{const q=[...ptrs.values()];return{x:(q[0].x+q[1].x)/2,y:(q[0].y+q[1].y)/2,d:Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y)||1}};
@@ -1191,7 +1227,11 @@ cv.onpointermove=e=>{
     vpEl.scrollLeft=gest.fx*cv.clientWidth-(m.x-r.left);vpEl.scrollTop=gest.fy*cv.clientHeight-(m.y-r.top);draw();return}
   if(ignore)return;
   if(drag&&drag.pan){vpEl.scrollLeft=drag.sl-(e.clientX-drag.x);vpEl.scrollTop=drag.st-(e.clientY-drag.y);return}
-  if(drag&&drag.scale&&sel){const p=pos(e),k=Math.hypot(p.x-sel.x,p.y-sel.y)/drag.d0;fromCm(sel,Math.max(1,Math.min(60,drag.cm0*k)));$('pScale').value=toCm(sel);$('sizeLbl').textContent=Math.round(toCm(sel)*2)/2+' cm';moved=true;draw();return}
+  if(drag&&drag.scale&&sel){
+    const p=pos(e),k=Math.hypot(p.x-sel.x,p.y-sel.y)/drag.d0;
+    fromCm(sel,Math.max(1,Math.min(maxWidthCm(sel),drag.cm0*k)));
+    syncWidth();moved=true;draw();return;
+  }
   if(drag&&drag.rot&&sel){const p=pos(e),{w,h}=itemSize(sel);let d=(Math.atan2(p.y-sel.y,p.x-sel.x)-Math.atan2(h,w))*180/Math.PI;d=((d+540)%360)-180;
     for(const k of [-180,-135,-90,-45,0,45,90,135,180])if(Math.abs(d-k)<4)d=k;
     sel.rot=Math.round(d);$('pRot').value=sel.rot;moved=true;draw();return}
@@ -1712,7 +1752,9 @@ function syncSel(){
   $('selColor').style.display=sel.type==='image'?'none':'flex';
   if(editingText)$('pFont').value=sel.font;
   if(sel.type!=='image')$('pColor').value=sel.fill;
-  const cm=Math.round(toCm(sel)*2)/2;$('pScale').value=cm;$('sizeLbl').textContent=cm+' cm';$('pRot').value=sel.rot;
+  controls.classList.toggle('canvas-image',PRODUCTS[product].kind==='kanvas'&&sel.type==='image');
+  $('pScale').max=maxWidthCm(sel);
+  syncWidth();$('pRot').value=sel.rot;
 }
 function syncUI(){
   const P=PRODUCTS[product],g=isGiyim(),beden=garmentSizes[product];
