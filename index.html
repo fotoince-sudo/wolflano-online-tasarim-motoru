@@ -490,7 +490,7 @@ function canvasProduct(width,height){
 }
 const PRODUCTS={
   tisort:{name:'Erkek Standart Kesim Tişört',shirt:'Erkek',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
-  kadinTisort:{name:'Kadın Standart Kesim Tişört',shirt:'Kadın',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
+  kadinTisort:{name:'Kadın Standart Kesim Tişört',shirt:'Kadın',kind:'giyim',gsm:240,previewBackground:'#c7c7c7',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
   cocukTisort:{name:'Çocuk Standart Kesim Tişört',shirt:'Çocuk',kind:'giyim',sizes:GIYIM_BASKI,def:0,tz:1,zoom:100},
   erkekPolo:{name:'Erkek Polo Yaka Tişört',shirt:'Erkek',polo:true,kind:'giyim',sizes:GIYIM_BASKI,def:3,tz:1,zoom:100},
   kadinPolo:{name:'Kadın Polo Yaka Tişört',shirt:'Kadın',polo:true,kind:'giyim',sizes:GIYIM_BASKI,def:3,tz:1,zoom:100},
@@ -1072,6 +1072,7 @@ let detailProduct=null;
 const refreshTeeCards={};
 // Önizleme barındırıcısının kaynak sayfaya ayarladığı base URL'den bağımsız kalır.
 const productHref=hash=>new URL(hash,location.href).href;
+const fabricWeight=p=>PRODUCTS[p].gsm?`${PRODUCTS[p].gsm} g/m²`:'';
 function productTitleFor(p){
   const item=PRODUCTS[p];
   return item.polo||!item.shirt?item.name:item.shirt+' Standart Kesim Tişört';
@@ -1094,7 +1095,7 @@ function productPreview(canvas,p,face,selectedColor,selectedSize,format){
   const prev=ctx;
   ctx=canvas.getContext('2d');
   ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
-  ctx.fillStyle='#e6e6ef';
+  ctx.fillStyle=PRODUCTS[p].previewBackground??'#e6e6ef';
   ctx.fillRect(0,0,W,W);
   if(isGiyim(p))drawGarment(p,face,selectedColor,selectedSize);
   else {
@@ -1123,6 +1124,8 @@ function syncProductPage(){
   }else productPreview(front,p,'on',selectedColor,selectedSize,format);
   if(garment)productPreview($('shirtBack'),p,'arka',selectedColor,selectedSize,item.polo?curSize(p,'arka'):format);
   const measures=[];
+  const weight=fabricWeight(p);
+  if(weight)measures.push(['Gramaj',weight]);
   if(garment){
     const {e,b}=dims(p,selectedSize);
     measures.push(['Göğüs eni',`${cmText.format(e)} cm`],['Boy',`${cmText.format(b)} cm`]);
@@ -1247,11 +1250,12 @@ function buildTeeCard(grid,p,slug){
     colorSelect.value=draft?.color??(product===p?color:productColors(p)[0][1]);
     sizeSelect.value=draft?.size??garmentSizes[p];
     const {e,b}=dims(p,sizeSelect.value);
-    measures.textContent=`${cmText.format(e)} × ${cmText.format(b)} cm (en × boy)`;
+    const weight=fabricWeight(p);
+    measures.textContent=`${cmText.format(e)} × ${cmText.format(b)} cm (en × boy)`+(weight?` · ${weight}`:'');
     const previous=ctx;
     ctx=art.getContext('2d');
     ctx.resetTransform();
-    ctx.fillStyle='#e7ebe8';
+    ctx.fillStyle=PRODUCTS[p].previewBackground??'#e7ebe8';
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
@@ -1394,8 +1398,9 @@ function syncUI(){
   $('bedenBox').style.display=g?'block':'none';$('views').hidden=!g;
   syncPrintFormats();
   const [e,b]=OLCU[product]?.[beden]||[],cm=curSize(),f1=x=>(Math.round(x*10)/10).toString().replace('.',','),tee='<svg width="46" height="40" viewBox="0 0 46 40" fill="none" stroke="#333" stroke-width="2"><path d="M16 4l-11 6 4 8 5-3v21h18V15l5 3 4-8-11-6c-2 4-12 4-14 0z"/></svg>';
+  const weight=fabricWeight(product);
   let info;
-  if(g)info=`${tee}<div>${(P.shirt||P.kind==='giyim')?`<div>${P.name}</div>`:''}<b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${f1(e)} cm</span><span>Boy: ${f1(b)} cm</span></div>`;
+  if(g)info=`${tee}<div>${(P.shirt||P.kind==='giyim')?`<div>${P.name}</div>`:''}<b>${beden} Ölçüleri (Gerçek Ölçü)</b><span>En: ${f1(e)} cm</span><span>Boy: ${f1(b)} cm</span>${weight?`<span>Gramaj ${weight}</span>`:''}</div>`;
   else if(P.kind==='kanvas')info=`<div><b>Kanvas Ölçüleri</b><span>Ön yüz: ${(cm.w-7.5).toString().replace('.',',')}×${(cm.h-7.5).toString().replace('.',',')} cm</span><span>Katlama payı: 3,75 cm</span></div>`;
   else info=`<div><b>${P.name} Ölçüleri</b><span>Baskı alanı: ${cm.w}×${cm.h} cm</span></div>`;
   $('info').innerHTML=info;$('info2').innerHTML=info;
