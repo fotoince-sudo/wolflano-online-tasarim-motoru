@@ -180,9 +180,22 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-model,.product-form{padding:clamp(12px,2vw,20px);border:1px solid var(--bd);border-radius:14px;background:#fff}
 .product-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .product-views figure{margin:0}
-.product-views.single-view{grid-template-columns:minmax(0,1fr)}
-.product-views.single-view figure{max-width:420px;width:100%;margin-inline:auto}
 .product-views canvas{display:block;width:100%;height:auto;border-radius:8px}
+.product-picture{position:relative;border-radius:8px;overflow:hidden}
+.product-picture .mug-photo,.product-zoom-content .mug-photo{aspect-ratio:1}
+.product-photo-reverse img{transform:translateX(calc(-100% - var(--photo-shift))) scaleX(-1)}
+.product-zoom-button,.product-zoom-controls button{min-width:44px;min-height:44px;border:1px solid var(--bd);border-radius:50%;background:#fff;color:var(--p);font-size:23px;line-height:1;cursor:pointer}
+.product-zoom-button{position:absolute;right:5px;bottom:5px}
+#productZoom{width:min(94vw,760px);max-width:none;padding:12px}
+.product-zoom-header,.product-zoom-controls{display:flex;align-items:center;gap:8px}
+.product-zoom-header{justify-content:space-between;margin-bottom:8px}
+.product-zoom-header h2{margin:0;font-size:16px}
+.product-zoom-controls{justify-content:center;margin-top:8px}
+.product-zoom-controls output{min-width:54px;text-align:center;font-variant-numeric:tabular-nums}
+.product-zoom-controls button:disabled{opacity:.45;cursor:default}
+.product-zoom-viewport{overflow:auto;max-height:65vh;overscroll-behavior:contain;background:var(--product-preview-bg);border-radius:8px}
+.product-zoom-content canvas{display:block;width:100%;height:auto}
+.product-zoom-content [hidden]{display:none}
 .product-views [hidden]{display:none}
 .product-views figcaption{text-align:center;margin-top:5px;font-size:13px;font-weight:700}
 .product-measure{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;font-size:13px;color:var(--mut)}
@@ -407,8 +420,22 @@ body{display:flex;flex-direction:column;overflow:hidden}
     <div class="product-layout" id="productDetail" hidden>
       <section class="product-model" aria-labelledby="productTitle">
         <div class="product-views">
-          <figure><canvas id="shirtFront" width="480" height="480" aria-label="Ürünün ön yüzü"></canvas><div id="productPhotoFrame" class="mug-photo" hidden><img id="productPhoto" alt=""></div><figcaption id="productFrontCaption">Ön</figcaption></figure>
-          <figure id="productBackView"><canvas id="shirtBack" width="480" height="480" aria-label="Ürünün arka yüzü"></canvas><figcaption>Arka</figcaption></figure>
+          <figure>
+            <div class="product-picture">
+              <canvas id="shirtFront" width="480" height="480" aria-label="Ürünün ön yüzü"></canvas>
+              <div id="productPhotoFrame" class="mug-photo" hidden><img id="productPhoto" alt=""></div>
+              <button type="button" class="product-zoom-button" id="zoomProductFront" aria-label="Ön görünümü yakınlaştır">+</button>
+            </div>
+            <figcaption>Ön</figcaption>
+          </figure>
+          <figure>
+            <div class="product-picture">
+              <canvas id="shirtBack" width="480" height="480" aria-label="Ürünün arka yüzü"></canvas>
+              <div id="productBackPhotoFrame" class="mug-photo product-photo-reverse" hidden><img id="productBackPhoto" alt=""></div>
+              <button type="button" class="product-zoom-button" id="zoomProductBack" aria-label="Arka görünümü yakınlaştır">+</button>
+            </div>
+            <figcaption id="productBackCaption">Arka</figcaption>
+          </figure>
         </div>
         <p class="product-measure" id="productMeasurements" aria-live="polite"></p>
       </section>
@@ -427,6 +454,23 @@ body{display:flex;flex-direction:column;overflow:hidden}
       </form>
     </div>
   </div>
+  <dialog id="productZoom" aria-labelledby="productZoomTitle">
+    <div class="product-zoom-header">
+      <h2 id="productZoomTitle"></h2>
+      <form method="dialog"><button type="submit" class="sm" aria-label="Yakınlaştırmayı kapat">Kapat</button></form>
+    </div>
+    <div class="product-zoom-viewport" id="productZoomViewport" tabindex="0" aria-label="Yakınlaştırılmış ürün görseli">
+      <div class="product-zoom-content" id="productZoomContent">
+        <canvas id="productZoomCanvas" width="1600" height="1600" role="img"></canvas>
+        <div id="productZoomPhotoFrame" class="mug-photo" hidden><img id="productZoomPhoto" alt=""></div>
+      </div>
+    </div>
+    <div class="product-zoom-controls">
+      <button type="button" id="productZoomOut" aria-label="Uzaklaştır">−</button>
+      <output id="productZoomPercent" aria-live="polite"></output>
+      <button type="button" id="productZoomIn" aria-label="Yakınlaştır">+</button>
+    </div>
+  </dialog>
 </main>
 
 <dialog id="dlg">
@@ -1088,11 +1132,17 @@ const refreshTeeCards={};
 const productHref=hash=>new URL(hash,location.href).href;
 const PRODUCT_PREVIEW_BACKGROUND=getComputedStyle($('productPage')).getPropertyValue('--product-preview-bg').trim();
 const mensWhiteCardPhoto=new Image();
+const mensWhiteBackPhoto=new Image();
 // Clip the reference photo's white backdrop to the garment outline.
 const mensWhiteCardOutline=new Path2D(
   'M638 201 C690 234 810 234 862 201 C926 229 1065 247 1132 312 '+
   'L1385 568 1188 758 1143 724 1143 1303 356 1303 356 724 311 758 114 568 '+
   'L365 312 C426 251 551 233 638 201 Z'
+);
+const mensWhiteBackOutline=new Path2D(
+  'M533 168 C576 195 677 195 720 168 C772 194 883 208 943 261 '+
+  'L1155 477 991 634 957 610 957 1093 295 1093 295 610 258 634 96 475 '+
+  'L309 260 C366 213 483 191 533 168 Z'
 );
 const fabricWeight=p=>PRODUCTS[p].gsm?`${PRODUCTS[p].gsm} g/m²`:'';
 function productTitleFor(p){
@@ -1113,38 +1163,125 @@ function productChoice(parent,name,value,label,swatch,description){
     el('small',{textContent:description},caption);
   }
 }
-function productPreview(canvas,p,face,selectedColor,selectedSize,format){
+function drawMensWhiteReference(face,size){
+  const rear=face==='arka',photo=rear?mensWhiteBackPhoto:mensWhiteCardPhoto;
+  if(!photo.naturalWidth)return false;
+  const {B}=dims('tisort',size),scale=B/(rear?925:1102);
+  const center=rear?626:750,top=rear?168:201;
+  ctx.save();
+  ctx.translate(CX-center*scale,CY-B/2-top*scale);
+  ctx.scale(scale,scale);
+  ctx.clip(rear?mensWhiteBackOutline:mensWhiteCardOutline);
+  ctx.drawImage(photo,0,0);
+  ctx.restore();
+  return true;
+}
+function drawCanvasBack(p,format){
+  const {x,y,w,h}=getArea(p,'arka',undefined,format),edge=PRODUCTS[p].bleed*S;
+  ctx.beginPath();
+  ctx.rect(x,y,w,h);
+  fillStroke('#f3efe4');
+  ctx.fillStyle='#bc9671';
+  ctx.fillRect(x+2,y+2,w-4,h-4);
+  ctx.fillStyle='#e6e0d0';
+  ctx.fillRect(x+edge,y+edge,w-2*edge,h-2*edge);
+  ctx.strokeStyle='#a28365';
+  ctx.lineWidth=2;
+  ctx.strokeRect(x+edge,y+edge,w-2*edge,h-2*edge);
+}
+function productPreview(canvas,p,face,selectedColor,selectedSize,format,showPrint=true){
   const prev=ctx;
   ctx=canvas.getContext('2d');
   ctx.setTransform(canvas.width/W,0,0,canvas.height/W,0,0);
   ctx.fillStyle=PRODUCT_PREVIEW_BACKGROUND;
   ctx.fillRect(0,0,W,W);
-  if(isGiyim(p))drawGarment(p,face,selectedColor,selectedSize);
-  else {
+  const reference=p==='tisort'&&selectedColor==='#ffffff'&&drawMensWhiteReference(face,selectedSize);
+  if(!reference&&isGiyim(p))drawGarment(p,face,selectedColor,selectedSize);
+  if(!isGiyim(p)){
     const scale=PRODUCTS[p].tz;
     ctx.translate(CX*(1-scale),CY*(1-scale));ctx.scale(scale,scale);
-    drawCanvasBoard(selectedColor,p,format);
+    if(face==='arka')drawCanvasBack(p,format);
+    else drawCanvasBoard(selectedColor,p,format);
   }
-  areaSlots(p,face).forEach(slot=>drawPrintArea(getArea(p,face,selectedSize,format,slot),selectedColor,3.5));
+  if(showPrint&&(isGiyim(p)||face==='on')){
+    areaSlots(p,face).forEach(slot=>{
+      const area=getArea(p,face,selectedSize,format,slot);
+      if(reference){
+        const {B}=dims(p,selectedSize);
+        const neck=face==='on'?181*B/1102:53*B/925;
+        const gap=face==='on'?TEE_ASSETS.tisort.frontPrintGap:TEE_BACK_PRINT_FROM_NECK;
+        area.y=CY-B/2+neck+gap*S;
+      }
+      drawPrintArea(area,selectedColor,3.5);
+    });
+  }
   ctx=prev;
 }
-function syncProductPage(){
+function selectedProductOptions(){
   const {beden:shirtSize,renk:shirtColor,format:printFormat}=productForm.elements;
-  const p=detailProduct,item=PRODUCTS[p],garment=isGiyim(p);
+  const p=detailProduct,item=PRODUCTS[p];
   const selectedSize=shirtSize?.value,selectedColor=shirtColor.value||shirtColor[0]?.value||'#ffffff';
   const format=item.polo?curSize(p,'on'):item.sizes[printFormat.value];
-  const productBackView=$('productBackView');
-  productBackView.hidden=!garment;
-  productBackView.parentElement.classList.toggle('single-view',!garment);
-  const photo=$('productPhoto'),front=$('shirtFront'),mug=item.kind==='kupa';
-  $('productPhotoFrame').hidden=!mug;
-  front.hidden=mug;
-  $('productFrontCaption').textContent=mug?'Ürün görünümü':'Ön';
+  return {p,item,selectedSize,selectedColor,format};
+}
+function renderProductView(canvas,frame,face,selection,showPrint){
+  const {p,item,selectedSize,selectedColor,format}=selection;
+  const mug=item.kind==='kupa',rear=face==='arka';
+  frame.hidden=!mug;
+  canvas.hidden=mug;
   if(mug){
     const choice=item.colors.find(([,hex])=>hex===selectedColor)??item.colors[0];
-    setMugPhoto(photo,choice[2],item.trim?`${choice[0]} iç yüzeyli ve kulplu kupa`:item.name);
-  }else productPreview(front,p,'on',selectedColor,selectedSize,format);
-  if(garment)productPreview($('shirtBack'),p,'arka',selectedColor,selectedSize,item.polo?curSize(p,'arka'):format);
+    frame.classList.toggle('product-photo-reverse',rear);
+    setMugPhoto(frame.firstElementChild,choice[2],rear?`${item.name} temsili arka görünüm`:item.name);
+  }else productPreview(canvas,p,face,selectedColor,selectedSize,rear&&item.polo?curSize(p,'arka'):format,showPrint);
+}
+const productZoomDialog=$('productZoom');
+const PRODUCT_ZOOM_LEVELS=[1,1.5,2,3];
+let productZoomFace='on',productZoomIndex=1;
+function setProductZoom(index){
+  const viewport=$('productZoomViewport'),content=$('productZoomContent');
+  const centerX=(viewport.scrollLeft+viewport.clientWidth/2)/content.offsetWidth;
+  const centerY=(viewport.scrollTop+viewport.clientHeight/2)/content.offsetHeight;
+  productZoomIndex=index;
+  const percent=PRODUCT_ZOOM_LEVELS[index]*100;
+  content.style.width=`${percent}%`;
+  viewport.scrollLeft=centerX*content.offsetWidth-viewport.clientWidth/2;
+  viewport.scrollTop=centerY*content.offsetHeight-viewport.clientHeight/2;
+  $('productZoomPercent').textContent=`%${percent}`;
+  $('productZoomOut').disabled=index===0;
+  $('productZoomIn').disabled=index===PRODUCT_ZOOM_LEVELS.length-1;
+}
+function syncProductZoom(selection){
+  const rear=productZoomFace==='arka';
+  const caption=rear?$('productBackCaption').textContent:'Ön';
+  $('productZoomTitle').textContent=`${productTitleFor(selection.p)} · ${caption}`;
+  const canvas=$('productZoomCanvas');
+  canvas.setAttribute('aria-label',caption);
+  renderProductView(canvas,$('productZoomPhotoFrame'),productZoomFace,selection,false);
+}
+function openProductZoom(face){
+  productZoomFace=face;
+  syncProductZoom(selectedProductOptions());
+  $('productZoomContent').style.width='100%';
+  productZoomDialog.showModal();
+  const viewport=$('productZoomViewport');
+  viewport.scrollLeft=0;
+  viewport.scrollTop=0;
+  setProductZoom(2);
+  viewport.scrollTop=0;
+}
+$('zoomProductFront').onclick=()=>openProductZoom('on');
+$('zoomProductBack').onclick=()=>openProductZoom('arka');
+$('productZoomIn').onclick=()=>setProductZoom(productZoomIndex+1);
+$('productZoomOut').onclick=()=>setProductZoom(productZoomIndex-1);
+function syncProductPage(){
+  const selection=selectedProductOptions();
+  const {p,item,selectedColor,selectedSize,format}=selection,garment=isGiyim(p);
+  const illustrativeRear=!garment||(p==='tisort'&&selectedColor==='#ffffff'&&mensWhiteBackPhoto.naturalWidth);
+  $('productBackCaption').textContent=illustrativeRear?'Arka (temsili)':'Arka';
+  renderProductView($('shirtFront'),$('productPhotoFrame'),'on',selection,true);
+  renderProductView($('shirtBack'),$('productBackPhotoFrame'),'arka',selection,true);
+  if(productZoomDialog.open)syncProductZoom(selection);
   const measures=[];
   const weight=fabricWeight(p);
   if(weight)measures.push(['Gramaj',weight]);
@@ -1238,6 +1375,7 @@ function routeProduct(){
   const hash=location.hash,page=$('productPage');
   const opening=hash==='#urun-sec'||hash.startsWith('#urun-sec/');
   if(!opening&&page.hidden)return;
+  if(productZoomDialog.open)productZoomDialog.close();
   if(opening&&page.hidden)setFly('');
   document.body.classList.toggle('product-mode',opening);
   page.hidden=!opening;
@@ -1297,16 +1435,7 @@ function buildTeeCard(grid,p,slug){
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
-    if(p==='tisort'&&colorSelect.value==='#ffffff'&&mensWhiteCardPhoto.naturalWidth){
-      const {B}=dims(p,sizeSelect.value);
-      const photoScale=B/1102;
-      ctx.save();
-      ctx.translate(CX-750*photoScale,CY-B/2-201*photoScale);
-      ctx.scale(photoScale,photoScale);
-      ctx.clip(mensWhiteCardOutline);
-      ctx.drawImage(mensWhiteCardPhoto,0,0);
-      ctx.restore();
-    }else{
+    if(!(p==='tisort'&&colorSelect.value==='#ffffff'&&drawMensWhiteReference('on',sizeSelect.value))){
       drawGarment(p,'on',colorSelect.value,sizeSelect.value);
     }
     ctx=previous;
@@ -1525,8 +1654,15 @@ $('cart').onclick=()=>{
 
 $('brandWolf').src=document.querySelector('.wolf-avatar').src;
 buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProduct();
-mensWhiteCardPhoto.onload=()=>refreshTeeCards.tisort();
+mensWhiteCardPhoto.onload=()=>{
+  refreshTeeCards.tisort();
+  if(detailProduct==='tisort')syncProductPage();
+};
 mensWhiteCardPhoto.src='assets/erkek-beyaz-kart-referans.jpeg';
+mensWhiteBackPhoto.onload=()=>{
+  if(detailProduct==='tisort')syncProductPage();
+};
+mensWhiteBackPhoto.src='assets/erkek-beyaz-detay-arka.webp';
 for(const [p,asset] of Object.entries(TEE_ASSETS)){
   for(const face of ['on','arka']){
     const photo=new Image();
