@@ -156,10 +156,12 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .product-card{display:grid;grid-template-rows:auto 1fr;gap:8px;padding:8px;border:1px solid var(--bd);border-radius:12px;background:#fff;color:var(--tx);text-decoration:none;font-weight:700}
 .product-card:hover,.product-card:focus-visible{border-color:var(--p);color:var(--p)}
-.product-card canvas,.product-card img{display:block;width:100%;aspect-ratio:4/3;border-radius:6px}
-.product-card img{object-fit:contain;background:#f2f2f2}
+.product-card canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:6px}
+.mug-photo{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:8px;background:#fff}
+.mug-photo img{position:absolute;left:50%;top:var(--photo-top);height:var(--photo-height);width:auto;max-width:none;transform:translateX(var(--photo-shift))}
+.product-card .mug-photo{border-radius:6px}
 .product-card:last-child:nth-child(odd){grid-column:1/-1}
-.product-card:last-child:nth-child(odd) :is(canvas,img){width:min(100%,340px);justify-self:center}
+.product-card:last-child:nth-child(odd) :is(canvas,.mug-photo){width:min(100%,340px);justify-self:center}
 .product-card:last-child:nth-child(odd) span{justify-content:center;text-align:center}
 .product-card span{display:flex;align-items:center;min-height:44px;padding:0 4px 3px;font-size:clamp(13px,2vw,16px);line-height:1.3}
 .product-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:20px;align-items:start}
@@ -169,9 +171,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-views figure{margin:0}
 .product-views.single-view{grid-template-columns:minmax(0,1fr)}
 .product-views.single-view figure{max-width:420px;width:100%;margin-inline:auto}
-.product-views canvas,.product-views img{display:block;width:100%;height:auto;border-radius:8px}
+.product-views canvas{display:block;width:100%;height:auto;border-radius:8px}
 .product-views [hidden]{display:none}
-.product-views img{aspect-ratio:1;object-fit:contain;background:#f2f2f2}
 .product-views figcaption{text-align:center;margin-top:5px;font-size:13px;font-weight:700}
 .product-measure{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;font-size:13px;color:var(--mut)}
 .product-measure strong{color:var(--tx)}
@@ -395,7 +396,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
     <div class="product-layout" id="productDetail" hidden>
       <section class="product-model" aria-labelledby="productTitle">
         <div class="product-views">
-          <figure><canvas id="shirtFront" width="480" height="480" aria-label="Ürünün ön yüzü"></canvas><img id="productPhoto" width="480" height="480" alt="" hidden><figcaption id="productFrontCaption">Ön</figcaption></figure>
+          <figure><canvas id="shirtFront" width="480" height="480" aria-label="Ürünün ön yüzü"></canvas><div id="productPhotoFrame" class="mug-photo" hidden><img id="productPhoto" alt=""></div><figcaption id="productFrontCaption">Ön</figcaption></figure>
           <figure id="productBackView"><canvas id="shirtBack" width="480" height="480" aria-label="Ürünün arka yüzü"></canvas><figcaption>Arka</figcaption></figure>
         </div>
         <p class="product-measure" id="productMeasurements" aria-live="polite"></p>
@@ -491,10 +492,11 @@ const PRODUCTS={
   sapka:{name:'Şapka',kind:'sapka',sizes:[{n:'Şapka 20×8 cm',w:20,h:8}],def:0,tz:2.6,zoom:250},
   kupa:{...MUG,name:'Beyaz Kupa',colors:[['Beyaz','#ffffff','beyaz']]},
   kupaRenkli:{...MUG,name:'Renkli Kupa',trim:true,colors:[
-    ['Kırmızı','#c62937','kirmizi'],['Mavi','#347abb','mavi'],['Pembe','#d391b4','pembe'],
-    ['Sarı','#e4bd27','sari'],['Siyah','#1a1a1a','siyah']
+    ['Siyah','#1a1a1a','siyah'],['Mavi','#347abb','mavi'],['Kırmızı','#c62937','kirmizi'],
+    ['Sarı','#e4bd27','sari'],['Pembe','#d391b4','pembe'],['Yeşil','#87ae3d','yesil']
   ]},
   kupaKalpli:{...MUG,name:'Kalp Kulplu Kupa',heart:true,colors:[['Beyaz','#ffffff','kalp']]},
+  kupaPanel:{...MUG,name:'Panel Kupa',panel:true,colors:[['Siyah','#1a1a1a','panel']]},
   kupaSihirli:{...MUG,name:'Sihirli Kupa',colors:[['Siyah','#1a1a1a','sihirli']]},
   kanvas:canvasProduct(35,50),
   kanvasBuyuk:canvasProduct(50,70)
@@ -664,6 +666,9 @@ function drawMug(col,p){
   }
   ctx.stroke();ctx.lineWidth=1*S;ctx.strokeStyle=handle;ctx.stroke();ctx.restore();
   ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5*S,21*S,10*S,1.1*S);fillStroke(body);
+  if(item.panel){
+    ctx.fillStyle='#ffffff';ctx.fillRect(X-9.8*S,Y-3.65*S,18.7*S,7.9*S);
+  }
   ctx.beginPath();ctx.ellipse(X,Y-4.7*S,10.5*S,1.75*S,0,0,2*Math.PI);
   ctx.fillStyle=item.trim?col:shade(body,-13);ctx.fill();ctx.strokeStyle=shade(body,-45);ctx.stroke();
 }
@@ -960,7 +965,7 @@ const PRODUCT_ROUTES={
   erkekSeritliPolo:'erkek-seritli-polo',kadinSeritliPolo:'kadin-seritli-polo',cocukSeritliPolo:'cocuk-seritli-polo',
   sweat:'sweatshirt',kadinSweat:'kadin-sweatshirt',kizSweat:'kiz-cocuk-sweatshirt',erkekCocukSweat:'erkek-cocuk-sweatshirt',
   kanvas:'kanvas-35x50',kanvasBuyuk:'kanvas-50x70',
-  kupa:'beyaz-kupa',kupaRenkli:'renkli-kupa',kupaKalpli:'kalp-kulplu-kupa',kupaSihirli:'sihirli-kupa'
+  kupa:'beyaz-kupa',kupaRenkli:'renkli-kupa',kupaKalpli:'kalp-kulplu-kupa',kupaPanel:'panel-kupa',kupaSihirli:'sihirli-kupa'
 };
 // Gildan 5000B UK/EU yaş rehberi, mevcut çocuk standart tişört ölçüleri için.
 const CHILD_TEE_AGES={XS:'4–5',S:'5–6',M:'7–8',L:'9–11',XL:'12–14'};
@@ -1010,13 +1015,12 @@ function syncProductPage(){
   productBackView.hidden=!garment;
   productBackView.parentElement.classList.toggle('single-view',!garment);
   const photo=$('productPhoto'),front=$('shirtFront'),mug=item.kind==='kupa';
-  photo.hidden=!mug;
+  $('productPhotoFrame').hidden=!mug;
   front.hidden=mug;
   $('productFrontCaption').textContent=mug?'Ürün görünümü':'Ön';
   if(mug){
     const choice=item.colors.find(([,hex])=>hex===selectedColor)??item.colors[0];
-    photo.src=mugPhoto(choice[2]);
-    photo.alt=item.trim?`${choice[0]} iç yüzeyli ve kulplu kupa`:item.name;
+    setMugPhoto(photo,choice[2],item.trim?`${choice[0]} iç yüzeyli ve kulplu kupa`:item.name);
   }else productPreview(front,p,'on',selectedColor,selectedSize,format);
   if(garment)productPreview($('shirtBack'),p,'arka',selectedColor,selectedSize,item.polo?curSize(p,'arka'):format);
   const measures=[];
@@ -1065,7 +1069,23 @@ function productColors(p){
   if(item.kind==='kanvas')return COLORS.slice(0,1);
   return item.colors??COLORS;
 }
-const mugPhoto=name=>'assets/kupa/'+name+'.webp';
+// Kaynak boyutu ve kupanın fotoğraf içindeki sınırları (kulp dahil).
+const MUG_FRAMES={
+  beyaz:[384,480,105,177,329,365],siyah:[480,480,72,57,445,424],
+  mavi:[750,750,113,88,697,663],kirmizi:[1722,1722,545,464,1439,1322],
+  sari:[750,750,130,103,686,662],pembe:[750,750,81,81,714,668],
+  yesil:[1722,1722,547,455,1497,1351],kalp:[480,480,76,58,451,420],
+  panel:[750,750,142,142,702,638],sihirli:[750,750,74,101,726,676]
+};
+function setMugPhoto(image,name,alt=''){
+  const [width,height,left,top,right,bottom]=MUG_FRAMES[name];
+  const scale=72/(bottom-top);
+  image.style.setProperty('--photo-height',`${height*scale}%`);
+  image.style.setProperty('--photo-top',`${50-(top+bottom)*scale/2}%`);
+  image.style.setProperty('--photo-shift',`${-50*(left+right)/width}%`);
+  image.alt=alt;
+  image.src='assets/kupa/'+name+'.webp';
+}
 function productColorOptions(p){
   const options=productColors(p),choices=$('productColors');
   $('productColorField').hidden=options.length===1;
@@ -1109,7 +1129,8 @@ function buildProductPage(){
     const card=el('a',{className:'product-card',href:productHref('#urun-sec/'+slug)},$('productCatalog'));
     const item=PRODUCTS[p], [,hex,photo]=productColors(p)[0];
     if(photo){
-      el('img',{src:mugPhoto(photo),width:320,height:240,alt:'',loading:'lazy'},card);
+      const frame=el('div',{className:'mug-photo'},card);
+      setMugPhoto(el('img',{loading:'lazy'},frame),photo);
     }else{
       const canvas=el('canvas',{width:320,height:240},card);
       canvas.setAttribute('aria-hidden','true');
