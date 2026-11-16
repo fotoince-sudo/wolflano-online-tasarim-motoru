@@ -1087,6 +1087,13 @@ const refreshTeeCards={};
 // Önizleme barındırıcısının kaynak sayfaya ayarladığı base URL'den bağımsız kalır.
 const productHref=hash=>new URL(hash,location.href).href;
 const PRODUCT_PREVIEW_BACKGROUND=getComputedStyle($('productPage')).getPropertyValue('--product-preview-bg').trim();
+const mensWhiteCardPhoto=new Image();
+// Clip the reference photo's white backdrop to the garment outline.
+const mensWhiteCardOutline=new Path2D(
+  'M638 201 C690 234 810 234 862 201 C926 229 1065 247 1132 312 '+
+  'L1385 568 1188 758 1143 724 1143 1303 356 1303 356 724 311 758 114 568 '+
+  'L365 312 C426 251 551 233 638 201 Z'
+);
 const fabricWeight=p=>PRODUCTS[p].gsm?`${PRODUCTS[p].gsm} g/m²`:'';
 function productTitleFor(p){
   const item=PRODUCTS[p];
@@ -1290,7 +1297,18 @@ function buildTeeCard(grid,p,slug){
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
-    drawGarment(p,'on',colorSelect.value,sizeSelect.value);
+    if(p==='tisort'&&colorSelect.value==='#ffffff'&&mensWhiteCardPhoto.naturalWidth){
+      const {B}=dims(p,sizeSelect.value);
+      const photoScale=B/1102;
+      ctx.save();
+      ctx.translate(CX-750*photoScale,CY-B/2-201*photoScale);
+      ctx.scale(photoScale,photoScale);
+      ctx.clip(mensWhiteCardOutline);
+      ctx.drawImage(mensWhiteCardPhoto,0,0);
+      ctx.restore();
+    }else{
+      drawGarment(p,'on',colorSelect.value,sizeSelect.value);
+    }
     ctx=previous;
   };
   controls.onchange=()=>{
@@ -1507,6 +1525,8 @@ $('cart').onclick=()=>{
 
 $('brandWolf').src=document.querySelector('.wolf-avatar').src;
 buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProduct();
+mensWhiteCardPhoto.onload=()=>refreshTeeCards.tisort();
+mensWhiteCardPhoto.src='assets/erkek-beyaz-kart-referans.jpeg';
 for(const [p,asset] of Object.entries(TEE_ASSETS)){
   for(const face of ['on','arka']){
     const photo=new Image();
