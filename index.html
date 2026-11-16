@@ -40,6 +40,14 @@ button{cursor:pointer}
 .fly{display:none}
 .fly.on{display:block}
 .fly h4{margin:0 0 10px;font-size:17px}
+#bgChoice[hidden]{display:none}
+.bg-tabs{display:flex;gap:6px;margin-bottom:10px}
+.bg-tabs button[aria-pressed=true]{background:var(--pl);border-color:var(--p);font-weight:700}
+#bgGallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px;margin-bottom:10px}
+#bgGallery[hidden]{display:none}
+.bg-pattern{display:grid;gap:4px;min-width:0;padding:4px;font-size:12px}
+.bg-pattern img{width:100%;aspect-ratio:1.55;object-fit:cover;border-radius:5px}
+#bgChoice{margin-bottom:10px}
 #f-template details{margin-top:6px;border:1px solid var(--bd);border-radius:9px}
 #f-template summary{padding:10px 12px;cursor:pointer;font-weight:600}
 #f-template summary::marker{color:var(--p)}
@@ -120,6 +128,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .nav button.on{color:var(--tool-ink,var(--p))}
 .nav button.on i{background:var(--tool-ink,var(--p));color:#fff}
 .tool-label{white-space:nowrap}
+.nav [data-t=bg] .tool-label{white-space:normal}
 #qaProd{--tool-tint:#e6f2ff;--tool-ink:#1c5eac}
 .nav [data-t=aybuke]{--tool-tint:#fce8f4;--tool-ink:#9e2967}
 .nav [data-t=aybuke] i{overflow:hidden}
@@ -339,7 +348,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <button type="button" data-t="template" title="Şablon" aria-label="Şablon"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 3h12a2 2 0 0 1 2 2v12"/><rect x="3" y="6" width="15" height="15" rx="2"/><path d="M6 10h9M6 14h3v4H6zm6 0h3m-3 4h3"/></svg></i><span class="tool-label">Şablon</span></button>
         <button type="button" class="wolf-tool" data-t="wolf" title="Wolf — Yapay zekâ" aria-label="Wolf yapay zekâ"><i aria-hidden="true"><img class="wolf-avatar" alt="" src="data:image/webp;base64,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"></i><span>Wolf</span></button>
         <button type="button" data-t="qr" title="QR Kod" aria-label="QR Kod"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 3h6v6H3zm12 0h6v6h-6zM3 15h6v6H3z"/><path fill="currentColor" stroke="none" d="M5 5h2v2H5zm12 0h2v2h-2zM5 17h2v2H5zm6-4h3v3h-3zm5-2h2v4h-2zm3 4h2v4h-2zm-4 3h3v3h-3zm-4 1h2v2h-2z"/></svg></i><span class="tool-label">QR Kod</span></button>
-        <button type="button" data-t="bg" title="Zemin Rengi" aria-label="Zemin Rengi"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m2.5 8 9.5-5 9.5 5-9.5 5zM3 12l9 5 9-5M3 16l9 5 9-5"/><path d="m9 6.5 6 3"/></svg></i><span class="tool-label">Zemin</span></button>
+        <button type="button" data-t="bg" title="Arka Plan" aria-label="Arka Plan"><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m2.5 8 9.5-5 9.5 5-9.5 5zM3 12l9 5 9-5M3 16l9 5 9-5"/><path d="m9 6.5 6 3"/></svg></i><span class="tool-label">Arka Plan</span></button>
       </div>
     <input type="file" id="file" accept="image/*" hidden>
   </aside>
@@ -388,9 +397,19 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <button class="btn pr" id="addQr" style="width:100%">Qr Kod Ekle</button>
       </div>
       <div class="fly" id="f-bg">
-        <h4>Arka Plan</h4>
-        <p class="hint">Baskı alanının arka plan rengi.</p>
-        <div class="r"><input type="color" id="bgColor" value="#ffffff"><button class="sm" id="bgSet">Uygula</button><button class="sm" id="bgDel">Kaldır</button></div>
+        <div class="bg-tabs" role="group" aria-label="Arka plan türü">
+          <button type="button" class="sm" id="bgColorTab" aria-pressed="true">Arka Plan</button>
+          <button type="button" class="sm" id="bgPatternTab" aria-pressed="false">Desen</button>
+        </div>
+        <div id="bgGallery" aria-label="Desenler" hidden></div>
+        <div id="bgChoice" class="r" hidden>
+          <span id="bgChoiceName"></span><button type="button" class="sm" id="bgChange">Değiştir</button>
+        </div>
+        <div class="r">
+          <input type="color" id="bgColor" value="#ffffff" aria-label="Arka plan rengi">
+          <button type="button" class="sm" id="bgSet">Uygula</button>
+          <button type="button" class="sm" id="bgDel">Kaldır</button>
+        </div>
       </div>
 
       
@@ -1008,7 +1027,12 @@ function drawDesign(p,v){
     const area=getArea(p,v,undefined,undefined,slot),id=key(p,v,slot);
     const {x,y,w,h}=area;
     ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
-    if(bgs[id]){ctx.fillStyle=bgs[id];ctx.fillRect(x,y,w,h)}
+    const bg=bgs[id];
+    if(bg?.image){
+      const img=bg.image,scale=Math.max(w/img.naturalWidth,h/img.naturalHeight);
+      const width=img.naturalWidth*scale,height=img.naturalHeight*scale;
+      ctx.drawImage(img,x+(w-width)/2,y+(h-height)/2,width,height);
+    }else if(bg){ctx.fillStyle=bg;ctx.fillRect(x,y,w,h)}
     (designs[id]||[]).forEach(drawItem);ctx.restore();
   });
 }
@@ -1043,7 +1067,7 @@ function render(c,o={}){
     if(showArea)areaSlots(p,v).forEach(slot=>{
       const active=!slot||slot===poloChest;
       ctx.save();ctx.globalAlpha=active?1:.48;
-      const lineWidth=flatMug?uPx():(active?2.6:1.8);
+      const lineWidth=flatMug ? 0.55*uPx() : (active?2.6:1.8);
       drawPrintArea(getArea(p,v,undefined,undefined,slot),flatMug?'#ffffff':color,lineWidth);
       ctx.restore();
     });
@@ -1091,6 +1115,8 @@ function setFly(t){
   document.querySelectorAll('.nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   document.querySelectorAll('.fly').forEach(f=>f.classList.toggle('on',f.id==='f-'+t));
   $('panel').classList.toggle('open',!!t&&t!=='image');
+  ++bgRequest;
+  if(t==='bg')syncBackground();
 }
 $('pClose').onclick=()=>setFly('');
 document.querySelectorAll('.nav button[data-t]').forEach(b=>b.onclick=()=>{
@@ -1147,8 +1173,93 @@ $('addQr').onclick=()=>{
   for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect((k+pad)*m,(r+pad)*m,m,m);
   const a=getArea();add({type:'image',img:c,s:Math.min(a.w,a.h)*.5/sz});
 };
-$('bgSet').onclick=()=>{bgs[key()]=$('bgColor').value;commit();draw()};
-$('bgDel').onclick=()=>{delete bgs[key()];commit();draw()};
+const BACKGROUND_PATTERNS={
+  general:[
+    ["yilbasi","Yılbaşı","assets/zemin/yilbasi-k.jpg","assets/zemin/yilbasi.jpg","assets/zemin/yilbasi-kupa.jpg"],
+    ["sevgi","Kalpler","assets/zemin/sevgi-k.jpg","assets/zemin/sevgi.jpg","assets/zemin/sevgi-kupa.jpg"],
+    ["anne","Çiçekler","assets/zemin/anne-k.jpg","assets/zemin/anne.jpg","assets/zemin/anne-kupa.jpg"],
+    ["neon","Neon","assets/zemin/neon-k.jpg","assets/zemin/neon.jpg","assets/zemin/neon-kupa.jpg"],
+    ["kamuflaj","Kamuflaj","assets/zemin/kamuflaj-k.jpg","assets/zemin/kamuflaj.jpg","assets/zemin/kamuflaj-kupa.jpg"],
+    ["gece","Gece ve dağlar","assets/zemin/gece-k.jpg","assets/zemin/gece.jpg","assets/zemin/gece-kupa.jpg"],
+    ["mermer","Mermer","assets/zemin/mermer-k.jpg","assets/zemin/mermer.jpg","assets/zemin/mermer-kupa.jpg"],
+    ["suluboya","Suluboya","assets/zemin/suluboya-k.jpg","assets/zemin/suluboya.jpg","assets/zemin/suluboya-kupa.jpg"],
+    ["bohem","Bohem","assets/zemin/bohem-k.jpg","assets/zemin/bohem.jpg","assets/zemin/bohem-kupa.jpg"],
+    ["gokyuzu","Gökkuşağı","assets/zemin/gokyuzu-k.jpg","assets/zemin/gokyuzu.jpg","assets/zemin/gokyuzu-kupa.jpg"],
+    ["balon","Balon","assets/zemin/balon-k.jpg","assets/zemin/balon.jpg","assets/zemin/balon-kupa.jpg"],
+    ["uzay","Uzay","assets/zemin/uzay-k.jpg","assets/zemin/uzay.jpg","assets/zemin/uzay-kupa.jpg"]
+  ],
+  oil:[
+    ["oil-kizil-guller","Kızıl güller","assets/yagliboya/kizil-guller-thumb.webp","assets/yagliboya/kizil-guller.webp"],
+    ["oil-mavi-cicekler","Mavi çiçekler","assets/yagliboya/mavi-cicekler-thumb.webp","assets/yagliboya/mavi-cicekler.webp"],
+    ["oil-aycicekleri","Ayçiçekleri","assets/yagliboya/aycicekleri-thumb.webp","assets/yagliboya/aycicekleri.webp"],
+    ["oil-romantik-kalpler","Romantik kalpler","assets/yagliboya/romantik-kalpler-thumb.webp","assets/yagliboya/romantik-kalpler.webp"],
+    ["oil-kelebekler","Kelebekler ve lavanta","assets/yagliboya/kelebekler-thumb.webp","assets/yagliboya/kelebekler.webp"]
+  ],
+  tee:[
+    ["tee-zeytin","Zeytin Dalları","assets/tisort-fotograf/zeytin-thumb.webp","assets/tisort-fotograf/zeytin.webp"],
+    ["tee-kobalt","Kobalt Çiçekleri","assets/tisort-fotograf/kobalt-thumb.webp","assets/tisort-fotograf/kobalt.webp"],
+    ["tee-gece","Yıldızlı Gece","assets/tisort-fotograf/gece-thumb.webp","assets/tisort-fotograf/gece.webp"]
+  ]
+};
+const LARGE_PATTERN_FILES=new Set(["assets/zemin/neon.jpg","assets/zemin/kamuflaj.jpg","assets/zemin/mermer.jpg","assets/zemin/suluboya.jpg","assets/zemin/bohem.jpg","assets/tisort-fotograf/zeytin.webp","assets/tisort-fotograf/kobalt.webp"]);
+const PATTERN_SOURCE='https://raw.githubusercontent.com/fotoince-sudo/wolflano-tasarim-sitesi/440b5ecb5b3ef6d74809b9f6c094e427771697ee/';
+let bgMode='color',bgDraft=null,bgRequest=0;
+function availablePatterns(){
+  const kind=PRODUCTS[product].kind;
+  if(kind==='kupa')return [...BACKGROUND_PATTERNS.oil,...BACKGROUND_PATTERNS.general];
+  if(isGiyim()&&curSize().w===21&&curSize().h===29.7)return [...BACKGROUND_PATTERNS.tee,...BACKGROUND_PATTERNS.general];
+  return BACKGROUND_PATTERNS.general;
+}
+function renderBackgroundOptions(){
+  const patternMode=bgMode==='pattern',gallery=$('bgGallery');
+  $('bgColorTab').setAttribute('aria-pressed',String(!patternMode));
+  $('bgPatternTab').setAttribute('aria-pressed',String(patternMode));
+  $('bgColor').hidden=patternMode;
+  $('bgChoice').hidden=!(patternMode&&bgDraft);
+  $('bgChoiceName').textContent=bgDraft?.[1]||'';
+  $('bgSet').disabled=patternMode&&!bgDraft;
+  gallery.hidden=!patternMode||!!bgDraft;
+  if(gallery.hidden)return;
+  gallery.replaceChildren();
+  for(const pattern of availablePatterns()){
+    const [,name,thumb]=pattern;
+    const button=el('button',{type:'button',className:'sm bg-pattern'},gallery);
+    el('img',{alt:'',src:thumb,loading:'lazy'},button);
+    el('span',{textContent:name},button);
+    button.onclick=()=>{bgDraft=pattern;renderBackgroundOptions();$('bgSet').focus({preventScroll:true})};
+  }
+}
+function syncBackground(){
+  const bg=bgs[key()];
+  bgMode=bg?.image?'pattern':'color';
+  bgDraft=bg?.image?availablePatterns().find(([id])=>id===bg.id):null;
+  $('bgColor').value=typeof bg==='string'?bg:'#ffffff';
+  renderBackgroundOptions();
+}
+$('bgColorTab').onclick=()=>{++bgRequest;bgMode='color';renderBackgroundOptions()};
+$('bgPatternTab').onclick=()=>{++bgRequest;bgMode='pattern';renderBackgroundOptions()};
+$('bgChange').onclick=()=>{++bgRequest;bgDraft=null;renderBackgroundOptions();$('bgGallery').querySelector('button')?.focus({preventScroll:true})};
+$('bgSet').onclick=()=>{
+  const areaKey=key(),request=++bgRequest;
+  const apply=background=>{
+    bgs[areaKey]=background;commit();draw();setFly('');
+  };
+  if(bgMode==='color'){apply($('bgColor').value);return}
+  if(!bgDraft)return;
+  const [id,,,original,wide]=bgDraft,{w,h}=getArea();
+  const path=w/h>1.5&&wide?wide:original;
+  const image=new Image();
+  image.crossOrigin='anonymous';
+  image.onload=()=>{if(request===bgRequest&&areaKey===key())apply({id,image})};
+  image.onerror=()=>{if(request===bgRequest&&areaKey===key())toast('Desen yüklenemedi. Tekrar deneyin.')};
+  image.src=LARGE_PATTERN_FILES.has(path)?PATTERN_SOURCE+path:path;
+};
+$('bgDel').onclick=()=>{
+  ++bgRequest;
+  const areaKey=key();
+  if(bgs[areaKey]){delete bgs[areaKey];commit();draw()}
+  syncBackground();
+};
 
 // ---- seçili öğe paneli (boyut cm cinsinden)
 const toCm=it=>it.type==='text'?it.size/S:it.type==='image'?it.img.width*it.s/S:it.size/S;
@@ -1788,6 +1899,7 @@ function syncUI(){
   $('info').innerHTML=info;$('info2').innerHTML=info;
   document.querySelectorAll('#views button').forEach(x=>{x.setAttribute('aria-pressed',String(x.dataset.v===view));thumb(x.firstChild,product,x.dataset.v,color,'#8d8d8d')});
   syncSel();syncHist();
+  if($('f-bg').classList.contains('on'))syncBackground();
 }
 
 // ---- yakınlaştırma
