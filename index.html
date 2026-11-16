@@ -148,18 +148,18 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .bar .zoom input{width:160px;flex:none}
 .bar .zoom .ib{width:34px;height:34px;font-size:14px}
 .product-mode>.top,.product-mode>.ctx,.product-mode>.app{display:none}
-.product-page{flex:1;min-height:0;overflow:auto;background:#f5f4fa;padding:clamp(14px,4vw,44px)}
+.product-page{flex:1;min-height:0;overflow:auto;background:#f3f6f3;padding:clamp(14px,4vw,44px)}
 .product-shell{max-width:960px;margin:0 auto}
 .product-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .product-header h1{font-size:clamp(22px,4vw,34px);margin:0}
-.product-header a{color:var(--tx);text-decoration:none;white-space:nowrap}
+.product-header a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;color:var(--tx);text-decoration:none;text-align:center}
 .product-catalog section+section{margin-top:20px}
 .product-catalog h2{margin:0 0 9px;font-size:18px}
 .product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.product-card{display:grid;gap:8px;padding:8px;border:1px solid var(--bd);border-radius:12px;background:#fff;color:var(--tx);text-decoration:none;font-weight:700}
+.product-card{display:grid;grid-template-rows:auto 1fr;gap:8px;padding:8px;border:1px solid var(--bd);border-radius:12px;background:#fff;color:var(--tx);text-decoration:none;font-weight:700}
 .product-card:hover,.product-card:focus-visible{border-color:var(--p);color:var(--p)}
 .product-card canvas{display:block;width:100%;height:auto;border-radius:6px}
-.product-card span{padding:0 3px 3px;font-size:clamp(12px,2vw,15px)}
+.product-card span{display:flex;align-items:center;min-height:44px;padding:0 4px 3px;font-size:clamp(13px,2vw,16px);line-height:1.3}
 .product-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:20px;align-items:start}
 .product-layout[hidden]{display:none}
 .product-model,.product-form{padding:clamp(12px,2vw,20px);border:1px solid var(--bd);border-radius:14px;background:#fff}
@@ -177,17 +177,18 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-choices{display:flex;flex-wrap:wrap;gap:6px}
 .product-choices label{position:relative;cursor:pointer}
 .product-choices input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
-.product-choices label span{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;min-height:36px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
+.product-choices label span{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 9px;min-height:44px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
 .product-choices input:checked+span{border-color:var(--p);background:var(--pl);color:var(--p)}
 .product-choices input:focus-visible+span{outline:2px solid var(--p);outline-offset:2px}
 .product-choices label .size-option{align-items:flex-start;flex-direction:column;gap:2px}
-.size-option small{font-size:11px;color:var(--mut)}
+.size-option small{font-size:12px;color:var(--mut)}
+.product-size-hint{margin:6px 0 0;font-size:12px;color:var(--mut)}
 .product-color{width:15px;height:15px;border:1px solid #1d1d2b42;border-radius:50%}
-.product-form .btn{width:100%;margin-top:4px}
+.product-form .btn{width:100%;min-height:44px;margin-top:4px}
 @media(max-width:700px){
   .product-layout{grid-template-columns:minmax(0,1fr);gap:10px}
   .product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .product-header{margin-bottom:10px}
+  .product-header{align-items:flex-start;margin-bottom:10px}
   .product-form fieldset{margin-bottom:10px}
 }
 @media(max-width:800px){
@@ -405,7 +406,11 @@ body{display:flex;flex-direction:column;overflow:hidden}
       </section>
       <form class="product-form" id="productForm">
         <fieldset><legend>Renk</legend><div class="product-choices" id="productColors"></div></fieldset>
-        <fieldset><legend id="productSizeLegend">Beden</legend><div class="product-choices" id="productSizes"></div></fieldset>
+        <fieldset>
+          <legend id="productSizeLegend">Beden</legend>
+          <div class="product-choices" id="productSizes"></div>
+          <p class="product-size-hint" id="productSizeHint" hidden>Yaş aralıkları yaklaşıktır. Beden seçerken ürünün göğüs eni ve boyunu esas alın.</p>
+        </fieldset>
         <label for="productPrint" class="product-print-label" id="productPrintLabel">Baskı alanı</label>
         <select id="productPrint" name="format"></select>
         <p class="hint" id="productPrintHint" hidden>A3 dikey baskı bu bedene sığmıyor.</p>
@@ -896,6 +901,9 @@ const PRODUCT_ROUTES={
   tisort:'erkek-tisort',kadinTisort:'kadin-tisort',cocukTisort:'cocuk-tisort',
   erkekPolo:'erkek-polo',kadinPolo:'kadin-polo',cocukPolo:'cocuk-polo'
 };
+// Gildan 5000B UK/EU yaş rehberi, mevcut çocuk standart tişört ölçüleri için.
+const CHILD_TEE_AGES={XS:'4–5',S:'5–6',M:'7–8',L:'9–11',XL:'12–14'};
+const productDrafts={};
 let detailProduct=null;
 // Önizleme barındırıcısının kaynak sayfaya ayarladığı base URL'den bağımsız kalır.
 const productHref=hash=>new URL(hash,location.href).href;
@@ -950,15 +958,18 @@ function productPrintOptions(p,size,preferred){
   $('productPrintHint').hidden=choices.length===PRODUCTS[p].sizes.length;
 }
 function productSizeOptions(p){
-  const options=$('productSizes'),child=PRODUCTS[p].shirt==='Çocuk';
+  const options=$('productSizes'),child=PRODUCTS[p].shirt==='Çocuk',showAge=p==='cocukTisort';
+  const draft=productDrafts[p],selectedSize=draft?.size??garmentSizes[p];
   options.replaceChildren();
-  $('productSizeLegend').textContent=child?'Beden · göğüs eni × tişört boyu':'Beden';
+  $('productSizeLegend').textContent=showAge?'Yaş ve beden':child?'Beden · göğüs eni × ürün boyu':'Beden';
+  $('productSizeHint').hidden=!showAge;
   Object.entries(OLCU[p]).forEach(([size,[width,height]])=>{
     const description=child?`${cmText.format(width)} × ${cmText.format(height)} cm`:null;
-    productChoice(options,'beden',size,size,null,description);
+    const label=showAge?`${CHILD_TEE_AGES[size]} yaş · ${size}`:size;
+    productChoice(options,'beden',size,label,null,description);
   });
-  productForm.elements.beden.value=garmentSizes[p];
-  productPrintOptions(p,garmentSizes[p],sizeIdx[p]);
+  productForm.elements.beden.value=selectedSize;
+  productPrintOptions(p,selectedSize,draft?.format??sizeIdx[p]);
 }
 function routeProduct(){
   const hash=location.hash,page=$('productPage');
@@ -976,7 +987,7 @@ function routeProduct(){
     $('productBack').textContent=detailProduct?'Ürünlere dön':'Stüdyoya dön';
     if(detailProduct){
       productSizeOptions(detailProduct);
-      productForm.elements.renk.value=color;
+      productForm.elements.renk.value=productDrafts[detailProduct]?.color??color;
       syncProductPage();
     }
     page.scrollTop=0;
@@ -998,8 +1009,9 @@ function buildProductPage(){
   });
   COLORS.forEach(([name,hex])=>productChoice($('productColors'),'renk',hex,name,hex));
   productForm.onchange=event=>{
-    const {beden:shirtSize,format}=productForm.elements;
+    const {beden:shirtSize,renk:shirtColor,format}=productForm.elements;
     if(event.target.name==='beden')productPrintOptions(detailProduct,shirtSize.value,+format.value);
+    productDrafts[detailProduct]={size:shirtSize.value,color:shirtColor.value,format:+format.value};
     syncProductPage();
   };
   productForm.onsubmit=event=>{
@@ -1015,7 +1027,7 @@ function buildProductPage(){
     product=p;
     buildPrintFormats();
     sel=null;
-    location.hash='';
+    location.hash='studyo';
   };
   window.addEventListener('hashchange',routeProduct);
 }
