@@ -1285,21 +1285,26 @@ function drawWhiteTeeReference(p,face,size){
   return true;
 }
 const approvedStripedPoloPhotos={
-  on:{image:new Image(),garmentHeight:1220},
-  arka:{image:new Image(),garmentHeight:1210}
+  on:{
+    image:new Image(),garmentHeight:1220,
+    outline:new Path2D('M509 176 C466 176 421 169 391 171 C369 172 361 196 345 214 C325 238 260 268 212 289 C171 307 133 322 121 332 C81 371 67 418 58 477 C50 532 48 592 32 662 L30 685 C37 697 137 717 188 715 C199 715 205 711 207 702 L216 663 C235 813 214 1186 194 1337 C191 1352 193 1358 205 1365 C262 1392 437 1391 509 1390 C583 1391 754 1388 807 1366 C822 1359 825 1353 823 1338 C802 1187 785 812 801 663 L811 702 C813 711 818 716 831 715 C880 715 979 697 988 685 L985 661 C968 592 967 533 959 477 C951 422 934 371 898 333 C887 321 848 306 806 288 C757 267 694 239 675 215 C659 197 649 172 629 171 C599 169 550 176 509 176 Z')
+  },
+  arka:{
+    image:new Image(),garmentHeight:1210,
+    outline:new Path2D('M513 166 C450 166 401 167 382 179 C365 190 366 214 343 239 C320 260 260 285 212 307 C168 325 143 331 128 345 C93 380 74 424 65 479 C55 544 53 605 37 672 L33 698 C44 713 134 730 184 730 C198 729 204 726 206 715 L214 683 C234 810 221 1158 204 1307 C203 1321 209 1331 220 1338 C266 1366 381 1374 512 1374 C641 1374 753 1367 803 1337 C814 1330 820 1321 818 1307 C801 1157 786 812 806 682 L815 716 C819 727 825 730 838 730 C888 731 980 712 989 698 L985 673 C969 606 965 546 955 479 C946 424 927 381 893 347 C877 332 852 326 807 307 C759 286 701 260 678 240 C655 219 656 191 637 179 C618 167 573 166 513 166 Z')
+  }
 };
 function drawApprovedStripedPolo(p,face,col,size){
   if(p!=='erkekSeritliPolo'||col!=='#ffffff')return false;
-  const {image,garmentHeight}=approvedStripedPoloPhotos[face];
+  const {image,garmentHeight,outline}=approvedStripedPoloPhotos[face];
   if(!image.naturalWidth)return false;
   const scale=dims(p,size).B/garmentHeight;
-  const width=image.naturalWidth*scale,height=image.naturalHeight*scale;
   ctx.save();
-  ctx.resetTransform();
-  ctx.fillStyle='#fafafa';
-  ctx.fillRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  ctx.translate(CX-image.naturalWidth*scale/2,CY-image.naturalHeight*scale/2);
+  ctx.scale(scale,scale);
+  ctx.clip(outline);
+  ctx.drawImage(image,0,0);
   ctx.restore();
-  ctx.drawImage(image,CX-width/2,CY-height/2,width,height);
   return true;
 }
 function drawCanvasBack(p,format){
