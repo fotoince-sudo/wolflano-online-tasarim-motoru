@@ -444,20 +444,20 @@ const $=id=>document.getElementById(id);
 function el(t,p={},parent){const e=Object.assign(document.createElement(t),p);parent&&parent.append(e);return e}
 
 // Gildan resmi ölçü tabloları (inç → cm): [göğüs eni, boy, merkez arka yakadan kol hizası]
-const IN=2.54, SIZES=['S','M','L','XL','2XL','3XL','4XL','5XL'];
-const CHEST=[18,20,22,24,26,28,30,32];
+const IN=2.54, SIZES=['S','M','L','XL','2XL','3XL'];
+const CHEST=[18,20,22,24,26,28];
 function mk(len,slv,widths=CHEST,sizes=SIZES){
   return Object.fromEntries(sizes.map((s,i)=>[s,[
     widths[i]*IN,len[i]*IN,(slv?.[i]??(widths[i]/2+len[i]*.19))*IN
   ]]));
 }
-const OLCU_TISORT=mk([28,29,30,31,32,33,34,35],[15.625,17,18.5,20,21.5,22.375,23.625,25]);   // Gildan 5000
-const OLCU_UZUN=mk([27,28,29,30,31,32,33,34],[33,34,35,36,37,38,39,40]);                    // Gildan 18500
+const OLCU_TISORT=mk([28,29,30,31,32,33],[15.625,17,18.5,20,21.5,22.375]);   // Gildan 5000
+const OLCU_UZUN=mk([27,28,29,30,31,32],[33,34,35,36,37,38]);                    // Gildan 18500
 // Yetişkin ve çocuk bisiklet yaka sweatshirt için Gildan 18000 / 18000B referans ölçüleri.
-const OLCU_SWEAT=mk([26,27,28,29,30,31,32,33],[33,34,35,36,37,38,39,40],[20,22,24,26,28,30,32,34]);
+const OLCU_SWEAT=mk([26,27,28,29,30,31],[33,34,35,36,37,38],[20,22,24,26,28,30]);
 const OLCU_COCUK_SWEAT=mk([19.75,21.5,22.5,24,25.5],[23.5,26.5,27.75,30.25,33],[16,17,18,19,20],['XS','S','M','L','XL']);
 // BELLA+CANVAS 6400 göğüs ve boy ölçüleri. Kol çizimi şematiktir.
-const OLCU_KADIN=mk([25.25,26,26.75,27.5,28.25,29],null,[18.5,20,22,24,26,28],SIZES.slice(0,6));
+const OLCU_KADIN=mk([25.25,26,26.75,27.5,28.25,29],null,[18.5,20,22,24,26,28]);
 // Gildan 5000B çocuk tişörtü ölçü tablosu.
 const OLCU_COCUK=mk([20.5,22,23.5,25,26.5],[13.5,14.5,15.5,16.5,17.5],[16,17,18,19,20],['XS','S','M','L','XL']);
 const OLCU={
@@ -520,6 +520,7 @@ const COLORS=[
   ['Beyaz','#ffffff'],['Siyah','#1a1a1a'],['Lacivert','#304d83'],['Gri','#a8a8a8'],['Bej','#e3d9c0'],
   ['Yeşil','#4b6b22'],['Kırmızı','#c62937'],['Yavruağzı','#fac2a9'],['Açık Mavi','#a7d1ec'],['Açık Pembe','#f2bdcf']
 ];
+const MENS_COLORS=COLORS.filter(([,hex])=>hex!=='#fac2a9'&&hex!=='#f2bdcf');
 const VIEWS=[['on','Ön'],['arka','Arka'],['solyan','Sol Yan'],['sagyan','Sağ Yan'],['yaka','Yaka Detayı']];
 const EMOJIS=['😀','😍','🔥','⭐','❤️','🎉','🐱','🐶','🌈','⚽','🎸','🚀'];
 const SHAPES=[['rect','▭'],['circle','●'],['star','★'],['heart','♥'],['tri','▲']];
@@ -560,13 +561,18 @@ function neckDepth(p,face){
   return face==='on'?NECK_FRONT:NECK_BACK;
 }
 const BACK_PRINT_FROM_NECK=8;
+const TEE_BACK_PRINT_FROM_NECK=10;
 function getArea(p=product,v=view,garmentSize=garmentSizes[p],cm=curSize(p,v),slot=poloChest){
   const w=cm.w*S,h=cm.h*S;
   if(isGiyim(p)){
     const {B}=dims(p,garmentSize),t=CY-B/2;
-    // Standart yerleşim: ön baskı yaka dikişinin 6,4 cm (2,5") altından, sol göğüs logosu 8,9 cm (3,5") altından ve merkezden 13 cm sağda (giyenin solu)
+    // Sol göğüsteki logo, giyenin soluna doğru merkezden 13 cm kayar.
     const dx=cm.logo&&v==='on'?(isPoloFront(p,v)&&slot==='sag'?-13:13)*S:0;
-    const top=t+(neckDepth(p,v)+(v==='on'?(cm.logo?8.9:6.4):BACK_PRINT_FROM_NECK))*S;
+    const tee=TEE_ASSETS[p],frame=tee?.[v];
+    // Fotoğrafın merkez hattındaki yaka dikişini, fotoğrafla birlikte dikey ölçeğe çevir.
+    const neck=frame?(frame.neckY-frame.top)*B/(frame.bottom-frame.top):neckDepth(p,v)*S;
+    const gap=tee?(v==='on'?tee.frontPrintGap:TEE_BACK_PRINT_FROM_NECK):(v==='on'?(cm.logo?8.9:6.4):BACK_PRINT_FROM_NECK);
+    const top=t+neck+gap*S;
     return{x:CX+dx-w/2,y:top,w,h,cm};
   }
   return{x:CX-w/2,y:CY-h/2,w,h,cm};
@@ -588,12 +594,18 @@ const teePhotos={};
 const teeTextures=new Map();
 const RULER_INSET=34;
 const TEE_ASSETS={
-  tisort:{name:'erkek',
-    on:{width:1024,height:1536,left:19,right:1006,top:264,bottom:1330,label:[512,311,122]},
-    arka:{width:1024,height:1536,left:15,right:1009,top:260,bottom:1333}
+  tisort:{name:'erkek',frontPrintGap:8,
+    on:{width:1024,height:1536,left:19,right:1006,top:264,bottom:1330,neckY:435,label:[512,311,122]},
+    arka:{width:1024,height:1536,left:15,right:1009,top:260,bottom:1333,neckY:321}
   },
-  kadinTisort:{name:'kadin',on:{width:1254,height:1254,left:23,right:1229,top:108,bottom:1098,wovenLabel:[596,180,63,24]},arka:{width:1254,height:1254,left:23,right:1230,top:108,bottom:1102}},
-  cocukTisort:{name:'cocuk',on:{width:1024,height:1536,left:16,right:1006,top:261,bottom:1304,label:[509,323,100]},arka:{width:1024,height:1536,left:22,right:1000,top:262,bottom:1295}}
+  kadinTisort:{name:'kadin',frontPrintGap:6.5,
+    on:{width:1254,height:1254,left:23,right:1229,top:108,bottom:1098,neckY:293,wovenLabel:[596,180,63,24]},
+    arka:{width:1254,height:1254,left:23,right:1230,top:108,bottom:1102,neckY:179}
+  },
+  cocukTisort:{name:'cocuk',frontPrintGap:5,
+    on:{width:1024,height:1536,left:16,right:1006,top:261,bottom:1304,neckY:425,label:[509,323,100]},
+    arka:{width:1024,height:1536,left:22,right:1000,top:262,bottom:1295,neckY:325}
+  }
 };
 function drawTeePhoto(p,face,col,garmentSize){
   const asset=TEE_ASSETS[p];
@@ -1169,7 +1181,7 @@ function productSizeOptions(p){
 function productColors(p){
   const item=PRODUCTS[p];
   if(item.kind==='kanvas')return COLORS.slice(0,1);
-  return item.colors??COLORS;
+  return item.colors??(item.shirt==='Erkek'||p==='sweat'?MENS_COLORS:COLORS);
 }
 // Kaynak boyutu ve kupanın fotoğraf içindeki sınırları (kulp dahil).
 const MUG_FRAMES={
