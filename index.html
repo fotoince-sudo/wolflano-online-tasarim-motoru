@@ -57,6 +57,7 @@ input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--b
 .grid button{font-size:22px;padding:6px}
 .app>*{min-width:0}
 .stage .wrap{position:relative;background:#8d8d8d;border-radius:12px;padding:4px;width:min(100%,calc(100vh - 140px));margin:0 auto}
+.stage .wrap,.stage .wrap *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .vp{touch-action:none;overflow:auto;aspect-ratio:1;border-radius:10px}
 canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
 #boardDelete{position:absolute;top:calc(5% + 10px);left:calc(5% + 10px);display:flex;align-items:center;gap:4px;min-height:40px;padding:0 9px;border:1px solid #b42334;border-radius:9px;background:#fff;color:#a8192b;font-size:13px;font-weight:700;box-shadow:0 1px 4px #0003}
@@ -1198,6 +1199,10 @@ function handleHit(p){
   return ds<=dr?'scale':'rot';
 }
 const ptrs=new Map();let gest=null,ignore=false;
+const designWall=cv.closest('.wrap');
+for(const eventName of ['selectstart','contextmenu']){
+  designWall.addEventListener(eventName,event=>event.preventDefault());
+}
 const vpEl=$('vp'),mid=()=>{const q=[...ptrs.values()];return{x:(q[0].x+q[1].x)/2,y:(q[0].y+q[1].y)/2,d:Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y)||1}};
 function setZoomPx(z){zoom=Math.max(50,Math.min(400,z));cv.style.width=zoom+'%';$('zoom').value=Math.min(300,zoom);$('zoomLbl').textContent=Math.round(zoom)+'%'}
 cv.onpointerdown=e=>{
