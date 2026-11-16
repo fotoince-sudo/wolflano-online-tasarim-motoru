@@ -1392,14 +1392,16 @@ function syncProductZoom(selection){
 }
 function openProductZoom(face){
   productZoomFace=face;
-  syncProductZoom(selectedProductOptions());
+  const selection=selectedProductOptions();
+  syncProductZoom(selection);
   $('productZoomContent').style.width='100%';
   productZoomDialog.showModal();
   const viewport=$('productZoomViewport');
   viewport.scrollLeft=0;
   viewport.scrollTop=0;
-  setProductZoom(2);
-  viewport.scrollTop=0;
+  const closeUp=selection.p==='erkekSeritliPolo'&&selection.selectedColor==='#ffffff';
+  setProductZoom(closeUp?1:2);
+  viewport.scrollTop=closeUp?(viewport.scrollHeight-viewport.clientHeight)/2:0;
 }
 $('zoomProductFront').onclick=()=>openProductZoom('on');
 $('zoomProductBack').onclick=()=>openProductZoom('arka');
