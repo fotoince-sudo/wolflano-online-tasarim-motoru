@@ -40,14 +40,17 @@ button{cursor:pointer}
 .fly{display:none}
 .fly.on{display:block}
 .fly h4{margin:0 0 10px;font-size:17px}
-#bgChoice[hidden]{display:none}
-.bg-tabs{display:flex;gap:6px;margin-bottom:10px}
-.bg-tabs button[aria-pressed=true]{background:var(--pl);border-color:var(--p);font-weight:700}
-#bgGallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px;margin-bottom:10px}
+.bg-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.bg-controls .sm{min-height:42px;padding:5px 2px;white-space:nowrap;font-size:clamp(12px,3.5vw,15px)}
+.bg-controls .sm[aria-pressed=true],.bg-controls .active{background:var(--pl);border-color:var(--p)}
+.bg-color{display:flex;align-items:center;justify-content:center;gap:4px;position:relative;cursor:pointer}
+.bg-color::before{content:'';width:11px;height:11px;flex:none;border:1px solid #0003;border-radius:50%;background:var(--bg-color,#fff)}
+.bg-color:focus-within{outline:2px solid var(--p);outline-offset:1px}
+.bg-color input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+#bgGallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:6px;margin-top:10px}
 #bgGallery[hidden]{display:none}
 .bg-pattern{display:grid;gap:4px;min-width:0;padding:4px;font-size:12px}
 .bg-pattern img{width:100%;aspect-ratio:1.55;object-fit:cover;border-radius:5px}
-#bgChoice{margin-bottom:10px}
 #f-template details{margin-top:6px;border:1px solid var(--bd);border-radius:9px}
 #f-template summary{padding:10px 12px;cursor:pointer;font-weight:600}
 #f-template summary::marker{color:var(--p)}
@@ -397,19 +400,13 @@ body{display:flex;flex-direction:column;overflow:hidden}
         <button class="btn pr" id="addQr" style="width:100%">Qr Kod Ekle</button>
       </div>
       <div class="fly" id="f-bg">
-        <div class="bg-tabs" role="group" aria-label="Arka plan türü">
-          <button type="button" class="sm" id="bgColorTab" aria-pressed="true">Arka Plan</button>
-          <button type="button" class="sm" id="bgPatternTab" aria-pressed="false">Desen</button>
-        </div>
-        <div id="bgGallery" aria-label="Desenler" hidden></div>
-        <div id="bgChoice" class="r" hidden>
-          <span id="bgChoiceName"></span><button type="button" class="sm" id="bgChange">Değiştir</button>
-        </div>
-        <div class="r">
-          <input type="color" id="bgColor" value="#ffffff" aria-label="Arka plan rengi">
+        <div class="bg-controls" role="group" aria-label="Arka Plan">
+          <label class="sm bg-color" id="bgColorControl">Renk<input type="color" id="bgColor" value="#ffffff"></label>
+          <button type="button" class="sm" id="bgPatternTab" aria-pressed="false" aria-expanded="false" aria-controls="bgGallery">Desen</button>
           <button type="button" class="sm" id="bgSet">Uygula</button>
           <button type="button" class="sm" id="bgDel">Kaldır</button>
         </div>
+        <div id="bgGallery" aria-label="Desenler" hidden></div>
       </div>
 
       
@@ -1115,6 +1112,7 @@ function setFly(t){
   document.querySelectorAll('.nav button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   document.querySelectorAll('.fly').forEach(f=>f.classList.toggle('on',f.id==='f-'+t));
   $('panel').classList.toggle('open',!!t&&t!=='image');
+  $('pClose').hidden=t==='bg';
   ++bgRequest;
   if(t==='bg')syncBackground();
 }
@@ -1203,7 +1201,7 @@ const BACKGROUND_PATTERNS={
 };
 const LARGE_PATTERN_FILES=new Set(["assets/zemin/neon.jpg","assets/zemin/kamuflaj.jpg","assets/zemin/mermer.jpg","assets/zemin/suluboya.jpg","assets/zemin/bohem.jpg","assets/tisort-fotograf/zeytin.webp","assets/tisort-fotograf/kobalt.webp"]);
 const PATTERN_SOURCE='https://raw.githubusercontent.com/fotoince-sudo/wolflano-tasarim-sitesi/440b5ecb5b3ef6d74809b9f6c094e427771697ee/';
-let bgMode='color',bgDraft=null,bgRequest=0;
+let bgMode='color',bgDraft=null,bgRequest=0,bgGalleryOpen=false;
 function availablePatterns(){
   const kind=PRODUCTS[product].kind;
   if(kind==='kupa')return [...BACKGROUND_PATTERNS.oil,...BACKGROUND_PATTERNS.general];
@@ -1211,14 +1209,13 @@ function availablePatterns(){
   return BACKGROUND_PATTERNS.general;
 }
 function renderBackgroundOptions(){
-  const patternMode=bgMode==='pattern',gallery=$('bgGallery');
-  $('bgColorTab').setAttribute('aria-pressed',String(!patternMode));
-  $('bgPatternTab').setAttribute('aria-pressed',String(patternMode));
-  $('bgColor').hidden=patternMode;
-  $('bgChoice').hidden=!(patternMode&&bgDraft);
-  $('bgChoiceName').textContent=bgDraft?.[1]||'';
+  const patternMode=bgMode==='pattern',gallery=$('bgGallery'),patternButton=$('bgPatternTab');
+  $('bgColorControl').classList.toggle('active',!patternMode);
+  $('bgColorControl').style.setProperty('--bg-color',$('bgColor').value);
+  patternButton.setAttribute('aria-pressed',String(patternMode));
+  patternButton.setAttribute('aria-expanded',String(bgGalleryOpen));
   $('bgSet').disabled=patternMode&&!bgDraft;
-  gallery.hidden=!patternMode||!!bgDraft;
+  gallery.hidden=!bgGalleryOpen;
   if(gallery.hidden)return;
   gallery.replaceChildren();
   for(const pattern of availablePatterns()){
@@ -1226,19 +1223,27 @@ function renderBackgroundOptions(){
     const button=el('button',{type:'button',className:'sm bg-pattern'},gallery);
     el('img',{alt:'',src:thumb,loading:'lazy'},button);
     el('span',{textContent:name},button);
-    button.onclick=()=>{bgDraft=pattern;renderBackgroundOptions();$('bgSet').focus({preventScroll:true})};
+    button.setAttribute('aria-pressed',String(bgDraft?.[0]===pattern[0]));
+    button.onclick=()=>{
+      bgDraft=pattern;bgMode='pattern';bgGalleryOpen=false;
+      renderBackgroundOptions();$('bgSet').focus({preventScroll:true});
+    };
   }
 }
 function syncBackground(){
   const bg=bgs[key()];
+  bgGalleryOpen=false;
   bgMode=bg?.image?'pattern':'color';
   bgDraft=bg?.image?availablePatterns().find(([id])=>id===bg.id):null;
   $('bgColor').value=typeof bg==='string'?bg:'#ffffff';
   renderBackgroundOptions();
 }
-$('bgColorTab').onclick=()=>{++bgRequest;bgMode='color';renderBackgroundOptions()};
-$('bgPatternTab').onclick=()=>{++bgRequest;bgMode='pattern';renderBackgroundOptions()};
-$('bgChange').onclick=()=>{++bgRequest;bgDraft=null;renderBackgroundOptions();$('bgGallery').querySelector('button')?.focus({preventScroll:true})};
+$('bgColor').oninput=$('bgColor').onchange=()=>{
+  ++bgRequest;bgMode='color';bgGalleryOpen=false;renderBackgroundOptions();
+};
+$('bgPatternTab').onclick=()=>{
+  ++bgRequest;bgGalleryOpen=!bgGalleryOpen;renderBackgroundOptions();
+};
 $('bgSet').onclick=()=>{
   const areaKey=key(),request=++bgRequest;
   const apply=background=>{
