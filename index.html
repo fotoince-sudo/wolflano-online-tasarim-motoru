@@ -101,7 +101,10 @@ dialog::backdrop{background:#000a}
 .pv{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .pv figure{margin:0;flex:1 1 300px;text-align:center}
 .pv canvas{display:block;width:100%;height:auto;border-radius:10px}
-#dlg.mug-preview{max-width:min(94vw,620px)}
+#dlg.mug-preview{max-width:min(94vw,560px)}
+.mug-preview-views{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.mug-preview-views[hidden]{display:none}
+.mug-preview-views [aria-pressed=true]{background:var(--pl);border-color:var(--p);color:var(--p)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1d2b;color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:50}
 .hint{font-size:12px;color:var(--mut)}
 /* Canva benzeri düzen */
@@ -496,6 +499,10 @@ body{display:flex;flex-direction:column;overflow:hidden}
 <dialog id="dlg">
   <h3 style="margin-top:0">Ön İzleme</h3>
   <div class="pv" id="pv"></div>
+  <div class="mug-preview-views" id="mugPreviewViews" role="group" aria-label="Kupa görünümü" hidden>
+    <button type="button" class="sm" id="mugPreviewFront" aria-pressed="true">Ön</button>
+    <button type="button" class="sm" id="mugPreviewBack" aria-pressed="false">Arka</button>
+  </div>
   <div class="r" style="margin-top:14px;justify-content:center"><button class="sm" id="dlgClose">Kapat</button></div>
 </dialog>
 <div class="toast" id="toast"></div>
@@ -655,7 +662,7 @@ function printChoices(p,garmentSize=garmentSizes[p],face=view){
 }
 
 // ---- ürün çizimi (duvar koordinatlarında)
-function fillStroke(col,fill=col){ctx.fillStyle=fill;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
+function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
 const teePhotos={};
 const teeTextures=new Map();
 const RULER_INSET=34;
@@ -931,7 +938,7 @@ function drawCap(col){
   ctx.beginPath();ctx.moveTo(X-12*S,Y+5.5*S);ctx.quadraticCurveTo(X,Y+13*S,X+12*S,Y+5.5*S);ctx.quadraticCurveTo(X,Y+7.5*S,X-12*S,Y+5.5*S);ctx.closePath();
   ctx.fillStyle=shade(col,-25);ctx.fill();ctx.stroke();
 }
-function drawMug(col,p,presentation=false){
+function drawMug(col,p){
   const X=CX,Y=CY,item=PRODUCTS[p],body=item.trim?'#ffffff':col;
   const handle=item.heart?'#c62937':item.trim?col:body;
   ctx.save();ctx.lineWidth=1.5*S;ctx.strokeStyle=shade(handle,-35);ctx.beginPath();
@@ -943,20 +950,11 @@ function drawMug(col,p,presentation=false){
     ctx.ellipse(X+10*S,Y,4.7*S,3.6*S,0,-Math.PI/2,Math.PI/2);
   }
   ctx.stroke();ctx.lineWidth=1*S;ctx.strokeStyle=handle;ctx.stroke();ctx.restore();
-  if(presentation){
-    const glaze=ctx.createLinearGradient(X-10.5*S,Y,X+10.5*S,Y);
-    glaze.addColorStop(0,shade(body,-22));
-    glaze.addColorStop(.27,shade(body,10));
-    glaze.addColorStop(.7,body);
-    glaze.addColorStop(1,shade(body,-31));
-    ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5.8*S,21*S,10.8*S,1.1*S);fillStroke(body,glaze);
-  }else{
-    ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5*S,21*S,10*S,1.1*S);fillStroke(body);
-  }
+  ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5*S,21*S,10*S,1.1*S);fillStroke(body);
   if(item.panel){
     ctx.fillStyle='#ffffff';ctx.fillRect(X-9.8*S,Y-3.65*S,18.7*S,7.9*S);
   }
-  ctx.beginPath();ctx.ellipse(X,Y-(presentation?5.45:4.7)*S,10.5*S,(presentation ? .82 : 1.75)*S,0,0,2*Math.PI);
+  ctx.beginPath();ctx.ellipse(X,Y-4.7*S,10.5*S,1.75*S,0,0,2*Math.PI);
   ctx.fillStyle=item.trim?col:shade(body,-13);ctx.fill();ctx.strokeStyle=shade(body,-45);ctx.stroke();
 }
 function drawCanvasBoard(col,p,format=curSize(p,'on')){
@@ -1938,43 +1936,107 @@ function poloFacePrint(v){
   if(v==='arka')return curSize(product,v).n;
   return slotsWithDesign(v).map(slot=>CHEST_LABEL[slot]+' göğüs logo 8×8 cm').join(' ve ');
 }
-function customerPreview(v){
-  if(PRODUCTS[product].kind!=='kupa'){
-    const c=el('canvas',{width:420,height:420});
-    render(c,{v});
-    return c;
+function mugPreview(v,handleRight){
+  const area=getArea(product,v),item=PRODUCTS[product];
+  const radiusCm=4,heightCm=9.5,printWidth=area.cm.w,printHeight=area.cm.h;
+  const texelsPerCm=56;
+  const texture=el('canvas',{width:printWidth*texelsPerCm,height:printHeight*texelsPerCm});
+  if(slotsWithDesign(v).length){
+    const previousContext=ctx,scale=texelsPerCm/S;
+    ctx=texture.getContext('2d');
+    try{
+      ctx.setTransform(scale,0,0,scale,-area.x*scale,-area.y*scale);
+      drawDesign(product,v);
+    }finally{ctx=previousContext}
   }
-  const c=el('canvas',{width:840,height:480});
-  const previousContext=ctx;
-  ctx=c.getContext('2d');
-  try{
-    const backdrop=ctx.createLinearGradient(0,0,0,c.height);
-    backdrop.addColorStop(0,'#f8f8f5');
-    backdrop.addColorStop(1,'#e6e8e4');
-    ctx.fillStyle=backdrop;
-    ctx.fillRect(0,0,c.width,c.height);
-    // Include the handle when centering the close-up.
-    const left=-11*S,right=(PRODUCTS[product].heart?20:16)*S;
-    const scale=c.width*.78/(right-left);
-    ctx.translate(c.width/2,c.height*.51);
-    ctx.scale(scale,scale);
-    ctx.translate(-(CX+(left+right)/2),-(CY-.45*S));
-    drawMug(color,product,true);
-    drawDesign(product,v);
-  }finally{
-    ctx=previousContext;
+
+  const c=el('canvas',{width:720,height:520}),x=c.getContext('2d');
+  const pixelsPerCm=39,radius=radiusCm*pixelsPerCm,height=heightCm*pixelsPerCm;
+  const direction=handleRight?1:-1;
+  const center=c.width/2-direction*(item.heart?59:48);
+  const top=72,bottom=top+height,rim=radius*.16;
+  const body=item.trim?'#ffffff':color;
+  const handle=item.heart?'#c62937':color;
+  const backdrop=x.createLinearGradient(0,0,0,c.height);
+  backdrop.addColorStop(0,'#f8f8f5');backdrop.addColorStop(1,'#e6e8e4');
+  x.fillStyle=backdrop;x.fillRect(0,0,c.width,c.height);
+  x.save();
+  x.translate(center+direction*32,bottom+rim+5);x.scale(1,.20);
+  const shadow=x.createRadialGradient(0,0,8,0,0,radius*1.5);
+  shadow.addColorStop(0,'#2a252344');shadow.addColorStop(1,'#2a252300');
+  x.fillStyle=shadow;x.fillRect(-radius*1.5,-radius*1.5,radius*3,radius*3);
+  x.restore();
+
+  const hx=cm=>center+direction*cm*pixelsPerCm;
+  x.beginPath();x.moveTo(hx(3.85),top+height*.25);
+  if(item.heart){
+    x.bezierCurveTo(hx(5.1),top+height*.06,hx(8.1),top+height*.14,hx(7.5),top+height*.39);
+    x.quadraticCurveTo(hx(7.2),top+height*.59,hx(3.85),top+height*.78);
+  }else{
+    x.bezierCurveTo(hx(7.5),top+height*.19,hx(7.55),top+height*.74,hx(3.85),top+height*.73);
   }
+  x.lineCap='round';x.lineWidth=32;x.strokeStyle=shade(handle,-43);x.stroke();
+  x.lineWidth=25;x.strokeStyle=handle;x.stroke();
+
+  x.beginPath();
+  x.ellipse(center,top,radius,rim,0,Math.PI,0);
+  x.lineTo(center+radius,bottom);
+  x.ellipse(center,bottom,radius,rim,0,0,Math.PI);
+  x.closePath();
+  x.fillStyle=body;x.fill();
+  x.save();x.clip();
+  // Map the visible semicircle to the flat artwork. The unprinted gap is at the handle.
+  const middle=printWidth/2+direction*Math.PI*radiusCm/2;
+  const sourceAt=px=>middle+radiusCm*Math.asin(Math.max(-1,Math.min(1,(px-center)/radius)));
+  for(let px=Math.ceil(center-radius);px<center+radius;px++){
+    const lo=Math.max(0,sourceAt(px)),hi=Math.min(printWidth,sourceAt(px+1));
+    if(hi<=lo)continue;
+    const offset=(px+.5-center)/radius;
+    const curve=rim*Math.sqrt(Math.max(0,1-offset*offset));
+    const printTop=top+curve+(heightCm-printHeight)*pixelsPerCm/2;
+    x.drawImage(texture,lo*texelsPerCm,0,(hi-lo)*texelsPerCm,texture.height,px,printTop,1,printHeight*pixelsPerCm);
+  }
+
+  const glaze=x.createLinearGradient(center-radius,0,center+radius,0);
+  glaze.addColorStop(0,'#211b233d');glaze.addColorStop(.25,'#211b2300');
+  glaze.addColorStop(.67,'#211b2300');glaze.addColorStop(1,'#211b234a');
+  x.fillStyle=glaze;x.fillRect(center-radius,top-rim,2*radius,height+2*rim);
+  x.restore();
+
+  const inside=x.createLinearGradient(0,top-rim,0,top+rim);
+  const rimColor=item.trim?color:body;
+  inside.addColorStop(0,shade(rimColor,-56));inside.addColorStop(1,shade(rimColor,-5));
+  x.beginPath();x.ellipse(center,top,radius,rim,0,0,2*Math.PI);
+  x.fillStyle=inside;x.fill();
+  x.lineWidth=5;x.strokeStyle=shade(rimColor,15);x.stroke();
   return c;
 }
+function customerPreview(v){
+  if(PRODUCTS[product].kind==='kupa')return mugPreview(v,true);
+  const c=el('canvas',{width:420,height:420});
+  render(c,{v});
+  return c;
+}
+function showMugPreview(handleRight){
+  const f=el('figure');
+  f.append(mugPreview('on',handleRight));
+  $('pv').replaceChildren(f);
+  $('mugPreviewFront').setAttribute('aria-pressed',String(handleRight));
+  $('mugPreviewBack').setAttribute('aria-pressed',String(!handleRight));
+}
+$('mugPreviewFront').onclick=()=>showMugPreview(true);
+$('mugPreviewBack').onclick=()=>showMugPreview(false);
 $('preview').onclick=()=>{
   sel=null;syncSel();draw();const pv=$('pv'),dlg=$('dlg');
   const isMug=PRODUCTS[product].kind==='kupa';
   pv.replaceChildren();
   dlg.classList.toggle('mug-preview',isMug);
-  (isGiyim()?['on','arka']:['on']).forEach(v=>{
+  $('mugPreviewViews').hidden=!isMug;
+  if(isMug)showMugPreview(true);
+  else (isGiyim()?['on','arka']:['on']).forEach(v=>{
     const f=el('figure',{},pv);
     f.append(customerPreview(v));
-    if(!isMug)el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
+    el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
   });
   dlg.showModal();
 };
