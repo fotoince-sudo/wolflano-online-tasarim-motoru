@@ -101,6 +101,7 @@ dialog::backdrop{background:#000a}
 .pv{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .pv figure{margin:0;flex:1 1 300px;text-align:center}
 .pv canvas{display:block;width:100%;height:auto;border-radius:10px}
+#dlg.mug-preview{max-width:min(94vw,620px)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1d2b;color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:50}
 .hint{font-size:12px;color:var(--mut)}
 /* Canva benzeri düzen */
@@ -654,7 +655,7 @@ function printChoices(p,garmentSize=garmentSizes[p],face=view){
 }
 
 // ---- ürün çizimi (duvar koordinatlarında)
-function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
+function fillStroke(col,fill=col){ctx.fillStyle=fill;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
 const teePhotos={};
 const teeTextures=new Map();
 const RULER_INSET=34;
@@ -930,7 +931,7 @@ function drawCap(col){
   ctx.beginPath();ctx.moveTo(X-12*S,Y+5.5*S);ctx.quadraticCurveTo(X,Y+13*S,X+12*S,Y+5.5*S);ctx.quadraticCurveTo(X,Y+7.5*S,X-12*S,Y+5.5*S);ctx.closePath();
   ctx.fillStyle=shade(col,-25);ctx.fill();ctx.stroke();
 }
-function drawMug(col,p){
+function drawMug(col,p,presentation=false){
   const X=CX,Y=CY,item=PRODUCTS[p],body=item.trim?'#ffffff':col;
   const handle=item.heart?'#c62937':item.trim?col:body;
   ctx.save();ctx.lineWidth=1.5*S;ctx.strokeStyle=shade(handle,-35);ctx.beginPath();
@@ -942,11 +943,20 @@ function drawMug(col,p){
     ctx.ellipse(X+10*S,Y,4.7*S,3.6*S,0,-Math.PI/2,Math.PI/2);
   }
   ctx.stroke();ctx.lineWidth=1*S;ctx.strokeStyle=handle;ctx.stroke();ctx.restore();
-  ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5*S,21*S,10*S,1.1*S);fillStroke(body);
+  if(presentation){
+    const glaze=ctx.createLinearGradient(X-10.5*S,Y,X+10.5*S,Y);
+    glaze.addColorStop(0,shade(body,-22));
+    glaze.addColorStop(.27,shade(body,10));
+    glaze.addColorStop(.7,body);
+    glaze.addColorStop(1,shade(body,-31));
+    ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5.8*S,21*S,10.8*S,1.1*S);fillStroke(body,glaze);
+  }else{
+    ctx.beginPath();ctx.roundRect(X-10.5*S,Y-5*S,21*S,10*S,1.1*S);fillStroke(body);
+  }
   if(item.panel){
     ctx.fillStyle='#ffffff';ctx.fillRect(X-9.8*S,Y-3.65*S,18.7*S,7.9*S);
   }
-  ctx.beginPath();ctx.ellipse(X,Y-4.7*S,10.5*S,1.75*S,0,0,2*Math.PI);
+  ctx.beginPath();ctx.ellipse(X,Y-(presentation?5.45:4.7)*S,10.5*S,(presentation ? .82 : 1.75)*S,0,0,2*Math.PI);
   ctx.fillStyle=item.trim?col:shade(body,-13);ctx.fill();ctx.strokeStyle=shade(body,-45);ctx.stroke();
 }
 function drawCanvasBoard(col,p,format=curSize(p,'on')){
@@ -1929,31 +1939,44 @@ function poloFacePrint(v){
   return slotsWithDesign(v).map(slot=>CHEST_LABEL[slot]+' göğüs logo 8×8 cm').join(' ve ');
 }
 function customerPreview(v){
-  const c=el('canvas',{width:420,height:420});
-  render(c,{v});
-  const a=getArea(product,v),scale=c.width/W,previewCtx=c.getContext('2d');
-  previewCtx.save();
-  previewCtx.setTransform(1,0,0,1,0,0);
-  previewCtx.translate((isPoloFront(product,v)?CX:a.x+a.w/2)*scale,(a.y+a.h/2)*scale);
-  previewCtx.rotate(-.22);
-  previewCtx.font='700 20px system-ui';
-  previewCtx.textAlign='center';
-  previewCtx.textBaseline='middle';
-  previewCtx.lineWidth=2;
-  previewCtx.strokeStyle='#1d1d2b99';
-  previewCtx.fillStyle='#ffffffcc';
-  previewCtx.strokeText('WOLFLANO · ÖN İZLEME',0,0);
-  previewCtx.fillText('WOLFLANO · ÖN İZLEME',0,0);
-  previewCtx.restore();
+  if(PRODUCTS[product].kind!=='kupa'){
+    const c=el('canvas',{width:420,height:420});
+    render(c,{v});
+    return c;
+  }
+  const c=el('canvas',{width:840,height:480});
+  const previousContext=ctx;
+  ctx=c.getContext('2d');
+  try{
+    const backdrop=ctx.createLinearGradient(0,0,0,c.height);
+    backdrop.addColorStop(0,'#f8f8f5');
+    backdrop.addColorStop(1,'#e6e8e4');
+    ctx.fillStyle=backdrop;
+    ctx.fillRect(0,0,c.width,c.height);
+    // Include the handle when centering the close-up.
+    const left=-11*S,right=(PRODUCTS[product].heart?20:16)*S;
+    const scale=c.width*.78/(right-left);
+    ctx.translate(c.width/2,c.height*.51);
+    ctx.scale(scale,scale);
+    ctx.translate(-(CX+(left+right)/2),-(CY-.45*S));
+    drawMug(color,product,true);
+    drawDesign(product,v);
+  }finally{
+    ctx=previousContext;
+  }
   return c;
 }
 $('preview').onclick=()=>{
-  sel=null;syncSel();draw();const pv=$('pv');pv.replaceChildren();
+  sel=null;syncSel();draw();const pv=$('pv'),dlg=$('dlg');
+  const isMug=PRODUCTS[product].kind==='kupa';
+  pv.replaceChildren();
+  dlg.classList.toggle('mug-preview',isMug);
   (isGiyim()?['on','arka']:['on']).forEach(v=>{
     const f=el('figure',{},pv);
-    f.append(customerPreview(v));el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
+    f.append(customerPreview(v));
+    if(!isMug)el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
   });
-  $('dlg').showModal();
+  dlg.showModal();
 };
 $('dlgClose').onclick=()=>$('dlg').close();
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',2600)}
