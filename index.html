@@ -91,7 +91,7 @@ dialog{border:0;border-radius:16px;padding:18px;max-width:min(96vw,900px);width:
 dialog::backdrop{background:#000a}
 .pv{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
 .pv figure{margin:0;flex:1 1 300px;text-align:center}
-.pv img{width:100%;border-radius:10px}
+.pv canvas{display:block;width:100%;height:auto;border-radius:10px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1d1d2b;color:#fff;padding:12px 20px;border-radius:12px;display:none;z-index:50}
 .hint{font-size:12px;color:var(--mut)}
 /* Canva benzeri düzen */
@@ -395,8 +395,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
 <dialog id="dlg">
   <h3 style="margin-top:0">Ön İzleme</h3>
   <div class="pv" id="pv"></div>
-  <div class="r" style="margin-top:14px;justify-content:center" id="pvBtns"></div>
-  <div class="r" style="justify-content:center"><button class="sm" id="dlgClose">Kapat</button></div>
+  <div class="r" style="margin-top:14px;justify-content:center"><button class="sm" id="dlgClose">Kapat</button></div>
 </dialog>
 <div class="toast" id="toast"></div>
 <div hidden><div id="prodBox"><div id="prods"></div></div><div id="bedenBox"><div id="bedens"></div></div><div id="viewBox"></div></div>
@@ -927,23 +926,33 @@ $('zoom').oninput=e=>setZoom(+e.target.value);
 $('zin').onclick=()=>setZoom(zoom+25);$('zout').onclick=()=>setZoom(zoom-25);$('zfit').onclick=()=>setZoom(PRODUCTS[product].zoom,true);
 $('showArea').onchange=e=>{showArea=e.target.checked;draw()};
 
-// ---- ön izleme, indirme, sepet
+// ---- ön izleme ve sepet
 function viewsWithDesign(){return(isGiyim()?['on','arka']:['on']).filter(v=>(designs[key(product,v)]||[]).length||bgs[key(product,v)])}
-function download(url,name){el('a',{href:url,download:name}).click()}
-function exportDesign(v){ // 300 DPI, gerçek cm boyutunda
-  const a=getArea(product,v),k=300/2.54/S,c=el('canvas',{width:Math.round(a.cm.w/2.54*300),height:Math.round(a.cm.h/2.54*300)});
-  const prev=ctx;ctx=c.getContext('2d');ctx.scale(k,k);ctx.translate(-a.x,-a.y);
-  if(bgs[key(product,v)]){ctx.fillStyle=bgs[key(product,v)];ctx.fillRect(a.x,a.y,a.w,a.h)}
-  (designs[key(product,v)]||[]).forEach(drawItem);ctx=prev;return c.toDataURL('image/png');
+function customerPreview(v){
+  const c=el('canvas',{width:420,height:420});
+  render(c,{v});
+  const a=getArea(product,v),scale=c.width/W,previewCtx=c.getContext('2d');
+  previewCtx.save();
+  previewCtx.setTransform(1,0,0,1,0,0);
+  previewCtx.translate((a.x+a.w/2)*scale,(a.y+a.h/2)*scale);
+  previewCtx.rotate(-.22);
+  previewCtx.font='700 20px system-ui';
+  previewCtx.textAlign='center';
+  previewCtx.textBaseline='middle';
+  previewCtx.lineWidth=2;
+  previewCtx.strokeStyle='#1d1d2b99';
+  previewCtx.fillStyle='#ffffffcc';
+  previewCtx.strokeText('WOLFLANO · ÖN İZLEME',0,0);
+  previewCtx.fillText('WOLFLANO · ÖN İZLEME',0,0);
+  previewCtx.restore();
+  return c;
 }
 $('preview').onclick=()=>{
-  sel=null;syncSel();draw();const pv=$('pv');pv.innerHTML='';$('pvBtns').innerHTML='';
+  sel=null;syncSel();draw();const pv=$('pv');pv.replaceChildren();
   (isGiyim()?['on','arka']:['on']).forEach(v=>{
-    const c=el('canvas',{width:W,height:W});render(c,{v});const f=el('figure',{},pv);
-    el('img',{src:c.toDataURL('image/png')},f);el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
-    el('button',{className:'sm',textContent:`⬇ ${v==='on'?'Ön':'Arka'} ürün görseli`,onclick:()=>download(c.toDataURL('image/png'),`wolflano-${product}-${v}.png`)},$('pvBtns'));
+    const f=el('figure',{},pv);
+    f.append(customerPreview(v));el('figcaption',{textContent:v==='on'?'Ön':'Arka'},f);
   });
-  viewsWithDesign().forEach(v=>el('button',{className:'sm',textContent:`⬇ ${v==='on'?'Ön':'Arka'} baskı dosyası (300 DPI)`,onclick:()=>download(exportDesign(v),`wolflano-${product}-${v}-baski-300dpi.png`)},$('pvBtns')));
   $('dlg').showModal();
 };
 $('dlgClose').onclick=()=>$('dlg').close();
@@ -951,7 +960,7 @@ function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';cle
 $('cart').onclick=()=>{
   const vs=viewsWithDesign();if(!vs.length){toast('Önce bir tasarım ekleyin');return}
   const detail={urun:PRODUCTS[product].name,renk:colorName,beden:isGiyim()?beden:null,baski:curSize().n,gorunumler:{}};
-  vs.forEach(v=>{const c=el('canvas',{width:W,height:W});render(c,{v});detail.gorunumler[v]={onizleme:c.toDataURL('image/jpeg',.7),baski300dpi:exportDesign(v)}});
+  vs.forEach(v=>{detail.gorunumler[v]={onizleme:customerPreview(v).toDataURL('image/jpeg',.72)}});
   try{const l=JSON.parse(localStorage.getItem('wolflano_sepet')||'[]');l.push(detail);localStorage.setItem('wolflano_sepet',JSON.stringify(l.slice(-3)))}catch(e){}
   window.dispatchEvent(new CustomEvent('wolflano:sepete-ekle',{detail}));
   if(window.parent!==window)window.parent.postMessage({type:'wolflano:sepete-ekle',detail},'*');
