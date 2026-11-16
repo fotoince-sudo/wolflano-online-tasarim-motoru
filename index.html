@@ -676,7 +676,7 @@ const mensPoloShots={
 const womensPoloShots={
   on:{photo:new Image(),top:25,bottom:1214},
   arka:{
-    photo:new Image(),top:12,bottom:1221,
+    photo:new Image(),top:12,bottom:1221,edgeInset:11,
     outline:new Path2D('M635 13 C558 13 511 11 495 31 C485 60 463 85 445 104 C391 128 310 151 260 170 C207 196 197 232 177 279 L102 463 Q100 468 105 472 C168 505 263 552 310 549 Q315 548 317 542 L335 490 C341 606 382 667 374 731 C368 807 333 891 311 981 C293 1057 275 1120 266 1159 L277 1167 Q277 1182 281 1187 C415 1230 862 1232 998 1188 L1001 1164 L1013 1164 C999 1082 981 1023 972 981 C952 883 915 795 908 729 C900 667 934 590 948 490 L964 541 Q966 549 976 549 C1026 545 1134 497 1176 469 L1174 461 L1102 291 C1084 244 1072 204 1013 170 C952 151 867 124 819 103 C798 80 786 57 778 32 C764 12 719 12 635 13 Z')
   }
 };
@@ -745,6 +745,11 @@ function drawPoloPhoto(p,face,col,size){
       if(face==='on'&&isMensPolo(p))paint.drawImage(photo,556,97,102,30,556,97,102,30);
     }
     if(striped&&isMensPolo(p))paintPoloTrim(paint,photo,shot.stripe,col);
+    if(shot.edgeInset){
+      paint.globalCompositeOperation='destination-out';
+      paint.lineWidth=shot.edgeInset*2;
+      paint.stroke(shot.outline);
+    }
     if(teeTextures.size>=12)teeTextures.delete(teeTextures.keys().next().value);
     teeTextures.set(key,texture);
   }
