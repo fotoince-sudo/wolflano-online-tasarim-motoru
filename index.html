@@ -35,7 +35,7 @@ button{cursor:pointer}
 .btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;font-size:15px}
 .btn.pr{background:var(--p);box-shadow:0 3px 10px #18664155}
 #cart{background:#137a42;box-shadow:0 3px 10px #137a4255}
-#cart svg,#boardDelete svg{width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#cart svg{width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 6px #0001}
 .fly{display:none}
 .fly.on{display:block}
@@ -60,9 +60,6 @@ input[type=text],textarea,select{width:100%;padding:9px;border:1px solid var(--b
 .stage .wrap,.stage .wrap *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .vp{touch-action:none;overflow:auto;aspect-ratio:1;border-radius:10px}
 canvas#c{display:block;width:100%;margin:0 auto;touch-action:none;cursor:move}
-#boardDelete{position:absolute;top:calc(5% + 10px);left:calc(5% + 10px);display:flex;align-items:center;gap:4px;min-height:40px;padding:0 9px;border:1px solid #b42334;border-radius:9px;background:#fff;color:#a8192b;font-size:13px;font-weight:700;box-shadow:0 1px 4px #0003}
-#boardDelete[hidden]{display:none}
-#boardDelete svg{width:16px;height:16px}
 .lbl{position:absolute;left:calc(5% + 8px);bottom:8px;color:#fff;font-size:clamp(9px,2.4vw,12px);line-height:1.3;pointer-events:none;text-shadow:0 1px 2px #0006}
 .tog{position:absolute;right:8px;bottom:8px;display:flex;align-items:center;gap:5px;padding:4px 6px;border:1px solid #215b40;border-radius:6px;background:#fff;font-size:11px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 4px #0002;cursor:pointer}
 .tog input{width:15px;height:15px;margin:0;accent-color:var(--p);cursor:pointer}
@@ -403,7 +400,6 @@ body{display:flex;flex-direction:column;overflow:hidden}
     <div class="canvasArea">
       <div class="wrap">
         <div class="vp" id="vp"><canvas id="c" width="1080" height="1080"></canvas></div>
-        <button type="button" id="boardDelete" aria-label="Seçili öğeyi sil" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></svg>Sil</button>
         <div class="lbl">Tasarım Duvarı<br>120 x 120 cm (Sabit)</div>
         <label class="tog">Baskı Alanı Göster <input type="checkbox" id="showArea" checked></label>
       </div>
@@ -1047,7 +1043,8 @@ function render(c,o={}){
     if(showArea)areaSlots(p,v).forEach(slot=>{
       const active=!slot||slot===poloChest;
       ctx.save();ctx.globalAlpha=active?1:.48;
-      drawPrintArea(getArea(p,v,undefined,undefined,slot),flatMug?'#ffffff':color,active?2.6:1.8);
+      const lineWidth=flatMug?uPx():(active?2.6:1.8);
+      drawPrintArea(getArea(p,v,undefined,undefined,slot),flatMug?'#ffffff':color,lineWidth);
       ctx.restore();
     });
     if(sel){
@@ -1065,7 +1062,6 @@ function render(c,o={}){
 }
 function draw(){
   render(cv,{ui:true});
-  $('boardDelete').hidden=!sel;
 }
 function thumb(c,p,v,col,bg){
   const prev=ctx;ctx=c.getContext('2d');const k=c.width/W*PRODUCTS[p].tz;
@@ -1179,7 +1175,6 @@ function deleteSelection(){
   sel=null;commit();syncUI();draw();
 }
 $('del').onclick=deleteSelection;
-$('boardDelete').onclick=deleteSelection;
 $('dup').onclick=()=>{if(!sel)return;const c={...sel,x:sel.x+12,y:sel.y+12};cur().push(c);sel=c;commit();syncUI();draw()};
 $('front').onclick=()=>{if(!sel)return;const a=cur();a.push(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
 $('back').onclick=()=>{if(!sel)return;const a=cur();a.unshift(a.splice(a.indexOf(sel),1)[0]);commit();draw()};
@@ -1205,6 +1200,20 @@ for(const eventName of ['selectstart','contextmenu']){
 }
 const vpEl=$('vp'),mid=()=>{const q=[...ptrs.values()];return{x:(q[0].x+q[1].x)/2,y:(q[0].y+q[1].y)/2,d:Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y)||1}};
 function setZoomPx(z){zoom=Math.max(50,Math.min(400,z));cv.style.width=zoom+'%';$('zoom').value=Math.min(300,zoom);$('zoomLbl').textContent=Math.round(zoom)+'%'}
+function itemAt(point){
+  const {x,y,w,h}=getArea();
+  if(point.x<x||point.x>x+w||point.y<y||point.y>y+h)return null;
+  const items=cur();
+  for(let i=items.length-1;i>=0;i--){
+    if(hit(items[i],point))return items[i];
+  }
+  return sel&&hit(sel,point,14*uPx())?sel:null;
+}
+designWall.addEventListener('click',event=>{
+  if(sel&&(event.target===designWall||event.target===vpEl)){
+    sel=null;syncSel();draw();
+  }
+});
 cv.onpointerdown=e=>{
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});try{cv.setPointerCapture(e.pointerId)}catch(_){}
   if(ptrs.size>=2){
@@ -1223,8 +1232,11 @@ cv.onpointerdown=e=>{
     });
     if(slot&&slot!==poloChest){poloChest=slot;sel=null;syncPrintFormats();}
   }
-  sel=(sel&&hit(sel,p,14*uPx())?sel:null)||[...cur()].reverse().find(i=>hit(i,p))||null;moved=false;
-  drag=sel?{dx:p.x-sel.x,dy:p.y-sel.y}:{pan:true,x:e.clientX,y:e.clientY,sl:vpEl.scrollLeft,st:vpEl.scrollTop};syncSel();draw();
+  sel=itemAt(p);moved=false;
+  syncSel();
+  const start=pos(e);
+  drag=sel?{dx:start.x-sel.x,dy:start.y-sel.y}:{pan:true,x:e.clientX,y:e.clientY,sl:vpEl.scrollLeft,st:vpEl.scrollTop};
+  draw();
 };
 cv.onpointermove=e=>{
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
