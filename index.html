@@ -586,7 +586,8 @@ function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.li
 const mensTeePhoto=new Image();
 mensTeePhoto.crossOrigin='anonymous';
 const mensTeeTextures=new Map();
-const MENS_TEE_FRAME={width:1024,height:1536,left:19,right:1006,top:264,bottom:1330,chestLeft:222,chestRight:810};
+const RULER_INSET=34;
+const MENS_TEE_FRAME={width:1024,height:1536,left:19,right:1006,top:264,bottom:1330};
 function drawMensTeePhoto(col,garmentSize){
   if(!mensTeePhoto.naturalWidth)return false;
   let texture=mensTeeTextures.get(col);
@@ -621,20 +622,13 @@ function drawMensTeePhoto(col,garmentSize){
     paint.restore();
     mensTeeTextures.set(col,texture);
   }
-  const f=MENS_TEE_FRAME,{E,B}=dims('tisort',garmentSize);
-  const measuredWidth=f.chestRight-f.chestLeft;
-  const leftWing=Math.min((f.chestLeft-f.left)*E/measuredWidth,(W-E)/2-4);
-  const rightWing=Math.min((f.right-f.chestRight)*E/measuredWidth,(W-E)/2-4);
+  const f=MENS_TEE_FRAME,{B}=dims('tisort',garmentSize);
+  const photoWidth=f.right-f.left,photoHeight=f.bottom-f.top;
   const sourceX=texture.width/f.width,sourceY=texture.height/f.height;
-  const chestX=CX-E/2,top=CY-B/2;
-  const panels=[
-    [f.left,f.chestLeft,chestX-leftWing,leftWing],
-    [f.chestLeft,f.chestRight,chestX,E],
-    [f.chestRight,f.right,chestX+E,rightWing]
-  ];
-  for(const [left,right,x,width] of panels){
-    ctx.drawImage(texture,left*sourceX,f.top*sourceY,(right-left)*sourceX,(f.bottom-f.top)*sourceY,x,top,width,B);
-  }
+  const scale=B/photoHeight;
+  const width=photoWidth*scale;
+  ctx.drawImage(texture,f.left*sourceX,f.top*sourceY,photoWidth*sourceX,photoHeight*sourceY,
+    CX-width/2,CY-B/2,width,B);
   return true;
 }
 function drawGarment(p,v,col,garmentSize=garmentSizes[p]){
@@ -757,7 +751,7 @@ function drawWall(){
 }
 function drawGuides(){
   ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#23714b';ctx.lineWidth=2;ctx.strokeRect(2,2,W-4,W-4);ctx.setLineDash([]);
-  const depth=34;
+  const depth=RULER_INSET;
   ctx.fillStyle='#35353f';ctx.fillRect(0,0,W,depth);ctx.fillRect(0,0,depth,W);
   ctx.fillStyle='#fff';ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
   ctx.font='20px system-ui';ctx.textBaseline='middle';ctx.textAlign='center';
