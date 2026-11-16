@@ -7,13 +7,14 @@
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-:root{--p:#6a2cf5;--pl:#efe9ff;--bd:#e4e4ec;--tx:#1d1d2b;--mut:#6b6b80}
+:root{--p:#186641;--pl:#e5f5eb;--bd:#e4e4ec;--tx:#1d1d2b;--mut:#6b6b80}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f5f9;color:var(--tx)}
 button,select,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 .top{background:#fff;padding:6px 16px 8px;box-shadow:0 1px 6px #0001;z-index:20}
-.logo{font-size:26px;font-weight:900;font-style:italic;letter-spacing:-.5px}
-.logo small{font-style:normal;font-weight:700;font-size:22px;color:var(--p);margin-left:10px}
+.logo{display:flex;align-items:center;gap:6px;font-size:26px;font-weight:900;font-style:italic;letter-spacing:-.5px}
+.logo img{width:38px;height:30px;object-fit:contain}
+.logo small{font-style:normal;font-weight:700;font-size:22px;color:var(--p);margin-left:4px}
 .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px;margin-top:4px}
 .toolbar button{border:1.5px solid #215b40}
 .print-formats,.history,.order-actions{display:flex;align-items:center;gap:6px}
@@ -32,7 +33,7 @@ button{cursor:pointer}
 .ib{width:42px;height:42px;border:0;border-radius:10px;background:#f0f0f5;font-size:20px}
 .ib:disabled{opacity:.4}
 .btn{border:0;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;font-size:15px}
-.btn.pr{background:var(--p);box-shadow:0 3px 10px #6a2cf555}
+.btn.pr{background:var(--p);box-shadow:0 3px 10px #18664155}
 #cart{background:#137a42;box-shadow:0 3px 10px #137a4255}
 #cart svg,#boardDelete svg{width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 6px #0001}
@@ -116,7 +117,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .rail{width:80px;flex:none;background:#fff;border-right:1px solid var(--bd);overflow-y:auto;padding:8px 0}
 .nav{display:flex;flex-direction:column;gap:5px;align-items:center}
 .nav button{width:68px;border:0;background:none;border-radius:12px;padding:5px 2px;font-size:11px;font-weight:600;color:var(--tx);display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.15}
-.nav button i{font-style:normal;width:46px;height:46px;display:grid;place-items:center;background:var(--tool-tint,#f3f1fb);color:var(--tool-ink,var(--p));border-radius:12px}
+.nav button i{font-style:normal;width:46px;height:46px;display:grid;place-items:center;background:var(--tool-tint,var(--pl));color:var(--tool-ink,var(--p));border-radius:12px}
 .nav button.on{color:var(--tool-ink,var(--p))}
 .nav button.on i{background:var(--tool-ink,var(--p));color:#fff}
 .tool-label{white-space:nowrap}
@@ -125,9 +126,9 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .nav [data-t=aybuke] i{overflow:hidden}
 .aybuke-avatar{display:block;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover;object-position:center 27%;transform:scale(1.28);transform-origin:53% 39%}
 .nav [data-t=aybuke].on i{outline:2px solid var(--tool-ink);outline-offset:2px}
-.nav [data-t=text]{--tool-tint:#edeefe;--tool-ink:#4e46b0}
+.nav [data-t=text]{--tool-tint:#e0f2e7;--tool-ink:#1c6042}
 .nav [data-t=image]{--tool-tint:#dff6ed;--tool-ink:#12704b}
-.nav [data-t=template]{--tool-tint:#f2e7ff;--tool-ink:#7134b1}
+.nav [data-t=template]{--tool-tint:#edf4df;--tool-ink:#4b6927}
 .nav [data-t=qr]{--tool-tint:#e1f6fc;--tool-ink:#08657c}
 .nav [data-t=bg]{--tool-tint:#fff0df;--tool-ink:#a04b16}
 .nav .wolf-tool{flex-direction:row;justify-content:center;gap:7px;width:74px;font-weight:700}
@@ -193,7 +194,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
   .panel{position:fixed;left:0;right:0;bottom:76px;width:auto;max-height:46vh;z-index:29;border-right:0;border-top:1px solid var(--bd);box-shadow:0 -6px 20px #0002;border-radius:16px 16px 0 0}
   .bar{margin-bottom:76px}
   .bar .zoom{display:none}
-  .logo{font-size:20px}.logo small{font-size:16px}
+  .logo{font-size:20px}.logo img{width:32px;height:25px}.logo small{font-size:16px}
   .btn{padding:9px 12px;font-size:13px}.ib{width:36px;height:36px}
   .top{padding:4px 8px 6px}
   html,body{overflow-x:hidden;max-width:100vw}
@@ -250,7 +251,7 @@ body{display:flex;flex-direction:column;overflow:hidden}
 </head>
 <body>
 <header class="top">
-  <div class="logo">🐺 WOLFLANO<small>Tasarla</small></div>
+  <div class="logo"><img id="brandWolf" alt=""><span>WOLFLANO</span><small>Tasarla</small></div>
   <div class="toolbar">
     <div id="printFormats" class="print-formats" role="group" aria-label="Baskı boyutu"></div>
     <div class="history" role="group" aria-label="Düzenleme geçmişi">
@@ -534,7 +535,7 @@ function drawWall(){
   ctx.fillStyle=g;ctx.fillRect(0,0,W,W);
 }
 function drawGuides(){
-  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#8a5cff';ctx.lineWidth=2;ctx.strokeRect(2,2,W-4,W-4);ctx.setLineDash([]);
+  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle='#23714b';ctx.lineWidth=2;ctx.strokeRect(2,2,W-4,W-4);ctx.setLineDash([]);
   const depth=34;
   ctx.fillStyle='#35353f';ctx.fillRect(0,0,W,depth);ctx.fillRect(0,0,depth,W);
   ctx.fillStyle='#fff';ctx.strokeStyle='#fff';ctx.lineWidth=1.5;
@@ -564,7 +565,7 @@ function drawRuler(depth,reversed){
 function drawPrintArea({x,y,w,h},garmentColor=color,lineWidth=2.25){
   const rgb=parseInt(garmentColor.slice(1),16);
   const luma=.2126*(rgb>>16)+.7152*((rgb>>8)&255)+.0722*(rgb&255);
-  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=luma<150?'#e7cbff':'#7142d7';ctx.lineWidth=lineWidth;
+  ctx.save();ctx.setLineDash([6,5]);ctx.strokeStyle=luma<150?'#bdf5d6':'#1b7146';ctx.lineWidth=lineWidth;
   ctx.strokeRect(x,y,w,h);ctx.restore();
 }
 
@@ -958,6 +959,7 @@ $('cart').onclick=()=>{
   toast('Sepete eklendi ✓');
 };
 
+$('brandWolf').src=document.querySelector('.wolf-avatar').src;
 buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProduct();
 window.addEventListener('resize',()=>{if(zoom>100)setZoom(zoom)});
 </script>
