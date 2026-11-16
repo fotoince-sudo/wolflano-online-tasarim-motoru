@@ -660,8 +660,8 @@ const mensPoloShots={
     outline:new Path2D('M610 14 C567 14 523 13 500 19 C476 28 484 57 434 100 C369 139 273 168 210 194 C140 238 120 301 85 401 L39 531 Q37 536 40 538 L30 575 Q29 578 36 580 C102 603 199 633 252 630 Q257 630 258 623 L274 579 C278 681 276 757 284 836 C279 902 268 944 269 1019 C268 1094 261 1175 250 1215 C246 1233 330 1258 608 1258 C886 1258 970 1234 966 1215 C953 1175 947 1094 945 1019 C944 943 932 856 922 801 C929 716 932 640 941 578 L957 629 Q960 636 969 636 C1033 635 1134 600 1183 581 Q1186 579 1185 575 L1175 538 Q1178 534 1174 526 L1127 401 C1093 303 1066 232 1005 192 C938 166 850 135 787 100 C747 63 742 28 722 20 C701 12 645 14 610 14 Z'),
     stripe:new Path2D(
       'M37 557 C92 577 198 611 258 611 M956 615 C1014 615 1125 581 1177 559 '+
-      'M460 211 C482 206 516 190 543 175 '+
-      'M674 175 C701 191 735 204 760 212'
+      'M450 90 C428 121 438 171 457 215 '+
+      'M769 90 C791 121 781 171 762 215'
     )
   },
   arka:{
@@ -673,33 +673,78 @@ const mensPoloShots={
     )
   }
 };
-function drawMensPoloPhoto(p,face,col,size){
-  const shot=mensPoloShots[face],photo=shot?.photo;
+const womensPoloShots={
+  on:{photo:new Image(),top:25,bottom:1214},
+  arka:{
+    photo:new Image(),top:12,bottom:1221,
+    outline:new Path2D('M635 13 C558 13 511 11 495 31 C485 60 463 85 445 104 C391 128 310 151 260 170 C207 196 197 232 177 279 L102 463 Q100 468 105 472 C168 505 263 552 310 549 Q315 548 317 542 L335 490 C341 606 382 667 374 731 C368 807 333 891 311 981 C293 1057 275 1120 266 1159 L277 1167 Q277 1182 281 1187 C415 1230 862 1232 998 1188 L1001 1164 L1013 1164 C999 1082 981 1023 972 981 C952 883 915 795 908 729 C900 667 934 590 948 490 L964 541 Q966 549 976 549 C1026 545 1134 497 1176 469 L1174 461 L1102 291 C1084 244 1072 204 1013 170 C952 151 867 124 819 103 C798 80 786 57 778 32 C764 12 719 12 635 13 Z')
+  }
+};
+const womensStripedPoloOutline=new Path2D('M512 8 C463 7 421 5 407 13 C394 19 392 42 380 52 C370 71 345 86 317 102 C275 120 234 131 205 141 C165 157 155 187 142 220 L72 374 C78 389 189 435 233 435 C240 435 245 415 252 395 C267 462 279 517 289 568 C307 640 280 695 257 766 C236 829 224 883 213 947 L214 971 C241 999 785 999 811 971 L811 947 C800 883 789 829 767 766 C744 694 717 640 735 568 C745 517 757 462 772 395 C780 415 784 435 791 435 C836 433 945 389 952 374 L882 220 C869 187 859 157 819 141 C790 131 750 120 707 102 C679 86 654 71 644 52 C632 42 630 19 617 13 C603 5 561 7 512 8 Z');
+const womensStripedPoloShots={
+  on:{photo:new Image(),top:7,bottom:997,outline:womensStripedPoloOutline},
+  arka:{photo:new Image(),top:7,bottom:997,outline:womensStripedPoloOutline}
+};
+const poloPhotoSets={
+  erkekPolo:mensPoloShots,erkekSeritliPolo:mensPoloShots,
+  kadinPolo:womensPoloShots,kadinSeritliPolo:womensStripedPoloShots
+};
+function paintPoloTrim(paint,photo,stripe,col){
+  if(!stripe)return;
+  const trim=document.createElement('canvas');
+  trim.width=photo.naturalWidth;trim.height=photo.naturalHeight;
+  const yarn=trim.getContext('2d');
+  yarn.lineWidth=7;yarn.lineCap='butt';
+  yarn.stroke(stripe);
+  yarn.globalCompositeOperation='source-in';
+  yarn.drawImage(photo,0,0);
+  if(col==='#ffffff'){
+    yarn.globalCompositeOperation='source-atop';
+    yarn.fillStyle='rgba(12,12,12,.86)';
+    yarn.fillRect(0,0,trim.width,trim.height);
+  }
+  paint.drawImage(trim,0,0);
+}
+function tintStripedWomenPolo(paint,face,col){
+  const {width,height}=paint.canvas;
+  const pixels=paint.getImageData(0,0,width,height),d=pixels.data;
+  const channels=[1,3,5].map(start=>parseInt(col.slice(start,start+2),16)/255);
+  for(let i=0;i<d.length;i+=4){
+    if(!d[i+3])continue;
+    const x=(i/4)%width,blue=d[i+2],red=d[i];
+    const yarn=(face==='arka'||x<width*.45||x>width*.55)&&red<140?Math.max(0,Math.min(1,(blue-red-9)/15)):0;
+    const light=Math.min(255,210+red*.5);
+    for(let j=0;j<3;j++)d[i+j]=d[i+j]*channels[j]*(1-yarn)+light*yarn;
+  }
+  paint.putImageData(pixels,0,0);
+}
+function drawPoloPhoto(p,face,col,size){
+  const shot=poloPhotoSets[p]?.[face],photo=shot?.photo;
   if(!shot?.loaded)return false;
   const striped=PRODUCTS[p].striped;
-  const key=`mens-polo|${face}|${col}|${striped}`;
+  const key=`${p}|${face}|${col}`;
   let texture=teeTextures.get(key);
   if(!texture){
     texture=document.createElement('canvas');
     texture.width=photo.naturalWidth;
     texture.height=photo.naturalHeight;
     const paint=texture.getContext('2d');
-    paint.clip(shot.outline);
+    if(shot.outline)paint.clip(shot.outline);
     paint.drawImage(photo,0,0);
-    if(col!=='#ffffff'){
+    if(col!=='#ffffff'&&p==='kadinSeritliPolo'){
+      tintStripedWomenPolo(paint,face,col);
+    }else if(col!=='#ffffff'){
       paint.globalCompositeOperation='multiply';
       paint.fillStyle=col;
       paint.fillRect(0,0,texture.width,texture.height);
+      if(!shot.outline){
+        paint.globalCompositeOperation='destination-in';
+        paint.drawImage(photo,0,0);
+      }
       paint.globalCompositeOperation='source-over';
-      if(face==='on')paint.drawImage(photo,556,97,102,30,556,97,102,30);
+      if(face==='on'&&isMensPolo(p))paint.drawImage(photo,556,97,102,30,556,97,102,30);
     }
-    if(striped){
-      paint.strokeStyle=col==='#ffffff'?'#171717':'#ffffff';
-      paint.lineWidth=7;
-      paint.lineCap='round';
-      paint.lineJoin='round';
-      paint.stroke(shot.stripe);
-    }
+    if(striped&&isMensPolo(p))paintPoloTrim(paint,photo,shot.stripe,col);
     if(teeTextures.size>=12)teeTextures.delete(teeTextures.keys().next().value);
     teeTextures.set(key,texture);
   }
@@ -766,7 +811,7 @@ function drawTeePhoto(p,face,col,garmentSize){
   return true;
 }
 function drawGarment(p,v,col,garmentSize=garmentSizes[p]){
-  if(isMensPolo(p)&&drawMensPoloPhoto(p,v,col,garmentSize))return;
+  if(poloPhotoSets[p]&&drawPoloPhoto(p,v,col,garmentSize))return;
   if(drawTeePhoto(p,v,col,garmentSize))return;
   const brandedFront=!!TEE_ASSETS[p]&&v==='on';
   const {e,b,sl,B}=dims(p,garmentSize),t=CY-B/2,front=v==='on',X=CX,shirt=PRODUCTS[p].shirt;
@@ -1514,7 +1559,7 @@ function buildTeeCard(grid,p,slug){
 function buildProductPage(){
   const grid=$('productCatalog');
   Object.entries(PRODUCT_ROUTES).forEach(([p,slug])=>{
-    if(TEE_ASSETS[p]||isMensPolo(p)){buildTeeCard(grid,p,slug);return;}
+    if(TEE_ASSETS[p]||poloPhotoSets[p]){buildTeeCard(grid,p,slug);return;}
     const card=el('a',{className:'product-card',href:productHref('#urun-sec/'+slug)},grid);
     const item=PRODUCTS[p], [,hex,photo]=productColors(p)[0];
     if(photo){
@@ -1723,18 +1768,19 @@ mensWhiteBackPhoto.onload=()=>{
   if(TEE_ASSETS[detailProduct])syncProductPage();
 };
 mensWhiteBackPhoto.src='assets/erkek-beyaz-detay-arka.webp';
-for(const [face,shot] of Object.entries(mensPoloShots)){
-  const {photo}=shot;
-  photo.onload=()=>{
-    shot.loaded=true;
-    if(face==='on'){
-      refreshTeeCards.erkekPolo();
-      refreshTeeCards.erkekSeritliPolo();
-    }
-    if(isMensPolo(detailProduct))syncProductPage();
-    if(isMensPolo(product)){syncUI();draw();}
-  };
-  photo.src='assets/erkek-polo-'+face+'.webp';
+for(const [name,shots] of Object.entries({'erkek-polo':mensPoloShots,'kadin-polo':womensPoloShots,'kadin-seritli-polo':womensStripedPoloShots})){
+  const models=Object.keys(poloPhotoSets).filter(p=>poloPhotoSets[p]===shots);
+  for(const [face,shot] of Object.entries(shots)){
+    const {photo}=shot;
+    if(shots===womensStripedPoloShots)photo.crossOrigin='anonymous';
+    photo.onload=()=>{
+      shot.loaded=true;
+      if(face==='on')models.forEach(p=>refreshTeeCards[p]());
+      if(models.includes(detailProduct))syncProductPage();
+      if(models.includes(product)){syncUI();draw();}
+    };
+    photo.src='assets/'+name+'-'+face+'.webp';
+  }
 }
 for(const [p,asset] of Object.entries(TEE_ASSETS)){
   for(const face of ['on','arka']){
