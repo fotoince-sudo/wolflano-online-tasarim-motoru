@@ -584,53 +584,61 @@ function printChoices(p,garmentSize=garmentSizes[p],face=view){
 
 // ---- ürün çizimi (duvar koordinatlarında)
 function fillStroke(col){ctx.fillStyle=col;ctx.strokeStyle=shade(col,-55);ctx.lineWidth=2;ctx.save();ctx.shadowColor='#0005';ctx.shadowBlur=22;ctx.shadowOffsetY=8;ctx.fill();ctx.restore();ctx.stroke()}
-const mensTeePhotos={on:new Image(),arka:new Image()};
-const mensTeeTextures=new Map();
+const teePhotos={};
+const teeTextures=new Map();
 const RULER_INSET=34;
-const MENS_TEE_FRAMES={
-  on:{width:1024,height:1536,left:19,right:1006,top:264,bottom:1330},
-  arka:{width:1024,height:1536,left:15,right:1009,top:260,bottom:1333}
+const TEE_ASSETS={
+  tisort:{name:'erkek',
+    on:{width:1024,height:1536,left:19,right:1006,top:264,bottom:1330,label:[512,311,122]},
+    arka:{width:1024,height:1536,left:15,right:1009,top:260,bottom:1333}
+  },
+  kadinTisort:{name:'kadin',on:{width:1024,height:1536,left:22,right:1002,top:262,bottom:1336,label:[509,321,115]},arka:{width:1024,height:1536,left:16,right:1007,top:261,bottom:1333}},
+  cocukTisort:{name:'cocuk',on:{width:1024,height:1536,left:16,right:1006,top:261,bottom:1304,label:[509,323,100]},arka:{width:1024,height:1536,left:22,right:1000,top:262,bottom:1295}}
 };
-function drawMensTeePhoto(face,col,garmentSize){
-  const mensTeePhoto=mensTeePhotos[face];
-  if(!mensTeePhoto?.naturalWidth)return false;
-  const frame=MENS_TEE_FRAMES[face];
-  const textureKey=face+'|'+col;
-  let texture=mensTeeTextures.get(textureKey);
+function drawTeePhoto(p,face,col,garmentSize){
+  const asset=TEE_ASSETS[p];
+  if(!asset)return false;
+  const key=p+'|'+face,photo=teePhotos[key];
+  if(!photo?.naturalWidth)return false;
+  const frame=asset[face];
+  const textureKey=key+'|'+col;
+  let texture=teeTextures.get(textureKey);
   if(!texture){
     texture=document.createElement('canvas');
-    texture.width=mensTeePhoto.naturalWidth;
-    texture.height=mensTeePhoto.naturalHeight;
+    texture.width=photo.naturalWidth;
+    texture.height=photo.naturalHeight;
     const paint=texture.getContext('2d');
-    paint.drawImage(mensTeePhoto,0,0);
+    paint.drawImage(photo,0,0);
     if(col!=='#ffffff'){
       paint.globalCompositeOperation='multiply';
       paint.fillStyle=col;
       paint.fillRect(0,0,texture.width,texture.height);
       paint.globalCompositeOperation='destination-in';
-      paint.drawImage(mensTeePhoto,0,0);
+      paint.drawImage(photo,0,0);
     }
     paint.globalCompositeOperation='source-over';
-    if(face==='on'){
+    if(frame.label){
+      const [center,top,width]=frame.label,height=width*35/122;
       paint.save();
       paint.scale(texture.width/frame.width,texture.height/frame.height);
       paint.fillStyle='#141414';
       paint.beginPath();
-      paint.roundRect(451,311,122,35,2);
+      paint.roundRect(center-width/2,top,width,height,2);
       paint.fill();
       paint.strokeStyle='#2d2d2d';
       paint.lineWidth=1;
-      paint.strokeRect(453,313,118,31);
+      paint.strokeRect(center-width/2+2,top+2,width-4,height-4);
       paint.fillStyle='#ffffff';
-      paint.font='bold 19px sans-serif';
+      paint.font=`bold ${width*19/122}px sans-serif`;
       paint.textAlign='center';
       paint.textBaseline='middle';
-      paint.fillText('wolflano',512,328.5);
+      paint.fillText('wolflano',center,top+height/2);
       paint.restore();
     }
-    mensTeeTextures.set(textureKey,texture);
+    if(teeTextures.size>=12)teeTextures.delete(teeTextures.keys().next().value);
+    teeTextures.set(textureKey,texture);
   }
-  const f=frame,{B}=dims('tisort',garmentSize);
+  const f=frame,{B}=dims(p,garmentSize);
   const photoWidth=f.right-f.left,photoHeight=f.bottom-f.top;
   const sourceX=texture.width/f.width,sourceY=texture.height/f.height;
   const scale=B/photoHeight;
@@ -640,8 +648,8 @@ function drawMensTeePhoto(face,col,garmentSize){
   return true;
 }
 function drawGarment(p,v,col,garmentSize=garmentSizes[p]){
-  if(p==='tisort'&&drawMensTeePhoto(v,col,garmentSize))return;
-  const brandedFront=p==='tisort'&&v==='on';
+  if(drawTeePhoto(p,v,col,garmentSize))return;
+  const brandedFront=!!TEE_ASSETS[p]&&v==='on';
   const {e,b,sl,B}=dims(p,garmentSize),t=CY-B/2,front=v==='on',X=CX,shirt=PRODUCTS[p].shirt;
   const nd=neckDepth(p,v),hn=(isYouth(p)?7.4:8.5)+(e-45.7)*0.08,tipX=e/2+1,tipY=4,ay=shirt?0.33*b:0.32*b;
   const P=(x,y)=>[X+x*S,t+y*S],pt=(x,y)=>ctx.lineTo(...P(x,y)),mv=(x,y)=>ctx.moveTo(...P(x,y));
@@ -1055,7 +1063,7 @@ const PRODUCT_ROUTES={
 const CHILD_TEE_AGES={XS:'4–5',S:'5–6',M:'7–8',L:'9–11',XL:'12–14'};
 const productDrafts={};
 let detailProduct=null;
-let refreshMensTeeCard=()=>{};
+const refreshTeeCards={};
 // Önizleme barındırıcısının kaynak sayfaya ayarladığı base URL'den bağımsız kalır.
 const productHref=hash=>new URL(hash,location.href).href;
 function productTitleFor(p){
@@ -1201,7 +1209,7 @@ function routeProduct(){
       productSizeOptions(detailProduct);
       productColorOptions(detailProduct);
       syncProductPage();
-    }else refreshMensTeeCard();
+    }else Object.values(refreshTeeCards).forEach(refresh=>refresh());
     page.scrollTop=0;
     $('productTitle').focus({preventScroll:true});
   }else{
@@ -1210,26 +1218,29 @@ function routeProduct(){
   }
   window.scrollTo(0,0);
 }
-function buildMensTeeCard(grid,slug){
+function buildTeeCard(grid,p,slug){
   const card=el('article',{className:'product-card product-card-configurable'},grid);
   const link=el('a',{href:productHref('#urun-sec/'+slug)},card);
   const art=el('canvas',{width:480,height:360},link);
   art.setAttribute('aria-hidden','true');
-  el('span',{textContent:productTitleFor('tisort')},link);
+  el('span',{textContent:productTitleFor(p)},link);
   const controls=el('div',{className:'product-card-options'},card);
   const colorLabel=el('label',{textContent:'Renk'},controls);
-  const colorSelect=el('select',{id:'mensTeeColor'},colorLabel);
-  COLORS.forEach(([name,hex])=>el('option',{textContent:name,value:hex},colorSelect));
+  const colorSelect=el('select',{id:p+'-card-color'},colorLabel);
+  productColors(p).forEach(([name,hex])=>el('option',{textContent:name,value:hex},colorSelect));
   const sizeLabel=el('label',{textContent:'Beden'},controls);
-  const sizeSelect=el('select',{id:'mensTeeSize'},sizeLabel);
-  Object.keys(OLCU_TISORT).forEach(size=>el('option',{textContent:size,value:size},sizeSelect));
+  const sizeSelect=el('select',{id:p+'-card-size'},sizeLabel);
+  Object.keys(OLCU[p]).forEach(size=>{
+    const label=p==='cocukTisort'?`${CHILD_TEE_AGES[size]} yaş · ${size}`:size;
+    el('option',{textContent:label,value:size},sizeSelect);
+  });
   const measures=el('output',{},controls);
   measures.setAttribute('aria-live','polite');
-  refreshMensTeeCard=()=>{
-    const draft=productDrafts.tisort;
-    colorSelect.value=draft?.color??(product==='tisort'?color:COLORS[0][1]);
-    sizeSelect.value=draft?.size??garmentSizes.tisort;
-    const {e,b}=dims('tisort',sizeSelect.value);
+  refreshTeeCards[p]=()=>{
+    const draft=productDrafts[p];
+    colorSelect.value=draft?.color??(product===p?color:productColors(p)[0][1]);
+    sizeSelect.value=draft?.size??garmentSizes[p];
+    const {e,b}=dims(p,sizeSelect.value);
     measures.textContent=`${cmText.format(e)} × ${cmText.format(b)} cm (en × boy)`;
     const previous=ctx;
     ctx=art.getContext('2d');
@@ -1238,24 +1249,24 @@ function buildMensTeeCard(grid,slug){
     ctx.fillRect(0,0,art.width,art.height);
     const scale=art.height/(W*.82);
     ctx.setTransform(scale,0,0,scale,art.width/2-CX*scale,art.height/2-CY*scale);
-    drawGarment('tisort','on',colorSelect.value,sizeSelect.value);
+    drawGarment(p,'on',colorSelect.value,sizeSelect.value);
     ctx=previous;
   };
   controls.onchange=()=>{
-    const preferred=productDrafts.tisort?.format??sizeIdx.tisort;
-    const choices=printChoices('tisort',sizeSelect.value);
-    productDrafts.tisort={
+    const preferred=productDrafts[p]?.format??sizeIdx[p];
+    const choices=printChoices(p,sizeSelect.value);
+    productDrafts[p]={
       size:sizeSelect.value,color:colorSelect.value,
       format:choices.find(({index})=>index===preferred)?.index??choices[0].index
     };
-    refreshMensTeeCard();
+    refreshTeeCards[p]();
   };
-  refreshMensTeeCard();
+  refreshTeeCards[p]();
 }
 function buildProductPage(){
   const grid=$('productCatalog');
   Object.entries(PRODUCT_ROUTES).forEach(([p,slug])=>{
-    if(p==='tisort'){buildMensTeeCard(grid,slug);return;}
+    if(TEE_ASSETS[p]){buildTeeCard(grid,p,slug);return;}
     const card=el('a',{className:'product-card',href:productHref('#urun-sec/'+slug)},grid);
     const item=PRODUCTS[p], [,hex,photo]=productColors(p)[0];
     if(photo){
@@ -1454,14 +1465,18 @@ $('cart').onclick=()=>{
 
 $('brandWolf').src=document.querySelector('.wolf-avatar').src;
 buildStatic();buildProductPage();commit();syncUI();draw();setZoom(100);routeProduct();
-for(const [face,photo] of Object.entries(mensTeePhotos)){
-  photo.crossOrigin='anonymous';
-  photo.onload=()=>{
-    if(face==='on')refreshMensTeeCard();
-    if(detailProduct==='tisort'&&!$('productDetail').hidden)syncProductPage();
-    if(product==='tisort'){syncUI();draw();}
-  };
-  photo.src='assets/erkek-tisort-'+face+'.webp';
+for(const [p,asset] of Object.entries(TEE_ASSETS)){
+  for(const face of ['on','arka']){
+    const photo=new Image();
+    teePhotos[p+'|'+face]=photo;
+    photo.crossOrigin='anonymous';
+    photo.onload=()=>{
+      if(face==='on')refreshTeeCards[p]();
+      if(detailProduct===p&&!$('productDetail').hidden)syncProductPage();
+      if(product===p){syncUI();draw();}
+    };
+    photo.src='assets/'+asset.name+'-tisort-'+face+'.webp';
+  }
 }
 window.addEventListener('resize',()=>{if(zoom>100)setZoom(zoom)});
 </script>
