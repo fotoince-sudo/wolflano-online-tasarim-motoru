@@ -592,7 +592,7 @@ const TEE_ASSETS={
     on:{width:1024,height:1536,left:19,right:1006,top:264,bottom:1330,label:[512,311,122]},
     arka:{width:1024,height:1536,left:15,right:1009,top:260,bottom:1333}
   },
-  kadinTisort:{name:'kadin',on:{width:1024,height:1536,left:22,right:1002,top:262,bottom:1336,label:[509,321,115]},arka:{width:1024,height:1536,left:16,right:1007,top:261,bottom:1333}},
+  kadinTisort:{name:'kadin',on:{width:1254,height:1254,left:23,right:1229,top:108,bottom:1098,wovenLabel:[596,180,63,24]},arka:{width:1254,height:1254,left:23,right:1230,top:108,bottom:1102}},
   cocukTisort:{name:'cocuk',on:{width:1024,height:1536,left:16,right:1006,top:261,bottom:1304,label:[509,323,100]},arka:{width:1024,height:1536,left:22,right:1000,top:262,bottom:1295}}
 };
 function drawTeePhoto(p,face,col,garmentSize){
@@ -617,6 +617,12 @@ function drawTeePhoto(p,face,col,garmentSize){
       paint.drawImage(photo,0,0);
     }
     paint.globalCompositeOperation='source-over';
+    if(frame.wovenLabel&&col!=='#ffffff'){
+      const [x,y,w,h]=frame.wovenLabel;
+      const sx=texture.width/frame.width,sy=texture.height/frame.height;
+      const region=[x*sx,y*sy,w*sx,h*sy];
+      paint.drawImage(photo,...region,...region);
+    }
     if(frame.label){
       const [center,top,width]=frame.label,height=width*35/122;
       paint.save();
