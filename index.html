@@ -164,6 +164,8 @@ body{display:flex;flex-direction:column;overflow:hidden}
 .product-card:last-child:nth-child(odd) :is(canvas,.mug-photo){width:min(100%,340px);justify-self:center}
 .product-card:last-child:nth-child(odd) span{justify-content:center;text-align:center}
 .product-card span{display:flex;align-items:center;min-height:44px;padding:0 4px 3px;font-size:clamp(13px,2vw,16px);line-height:1.3}
+.product-card-colors{display:flex;align-items:center;gap:5px;padding:0 4px 5px}
+.product-card-colors i{display:block;width:clamp(11px,3vw,16px);aspect-ratio:1;border:1px solid #18251b35;border-radius:50%;background:var(--swatch)}
 .product-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(260px,1fr);gap:20px;align-items:start}
 .product-layout[hidden]{display:none}
 .product-model,.product-form{padding:clamp(12px,2vw,20px);border:1px solid var(--bd);border-radius:14px;background:#fff}
@@ -1136,7 +1138,15 @@ function buildProductPage(){
       canvas.setAttribute('aria-hidden','true');
       thumb(canvas,p,'on',item.cardColor??hex,'#e7ebe8');
     }
-    el('span',{textContent:productTitleFor(p)},card);
+    const caption=el('div',{},card);
+    el('span',{textContent:productTitleFor(p)},caption);
+    if(item.trim){
+      const swatches=el('div',{className:'product-card-colors'},caption);
+      swatches.setAttribute('aria-hidden','true');
+      item.colors.forEach(([name,swatch])=>{
+        el('i',{title:name},swatches).style.setProperty('--swatch',swatch);
+      });
+    }
   });
   productForm.onchange=event=>{
     const {beden:shirtSize,renk:shirtColor,format}=productForm.elements;
